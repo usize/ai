@@ -143,17 +143,28 @@ consume the stream incrementally (never buffer-then-forward).
 
 ## Per-engine processing ledger (fairness contract)
 
-Grounded in source/docs review. This table is the heart of the
-methodology; it is published alongside results and any cell that cannot be
-matched is called out.
+This table is the heart of the methodology; it is published alongside
+results and any cell that cannot be matched is called out. Every row is
+grounded in source/docs review **and** tied to the exact checked-in config
+that produces the behavior, so a reviewer can verify each claim against a
+file in this repo (and, for the two built engines, reproduce it).
+
+**Verification status** per engine:
+
+- **Praxis AI** — ✅ verified: config `bench/engines/praxis/{t1,t2}.yaml`
+  runs through the harness; behaviors below confirmed end-to-end.
+- **agentgateway** — ✅ verified: config `bench/engines/agentgateway/t2.yaml`
+  (pinned digest, see `NOTES.md`) runs through the harness.
+- **Envoy AI Gateway** — ⏳ claimed from docs/source; **not yet built**.
+  Rows are marked pending until its standalone stack lands and is measured.
 
 ### Request body (T1, model routing) — all engines BUFFER the request body
 
-| Engine | Request body handling |
-|---|---|
-| Praxis AI | Bounded buffer (`BodyMode::StreamBuffer`). `model_to_header`/`json_body_field` parses incrementally within the buffer with **early-exit** once `model` is found; classifier / `model_rewrite` do a full `serde_json` decode at end-of-stream. Native Rust parse, in-process. |
-| agentgateway | Full buffer in-process (`read_body_with_limit`), native JSON parse to read `model`, apply aliases, inject `stream_options`. Source explicitly notes it buffers "just due to how our interface works." Rust, in-process. |
-| Envoy AI Gateway | Envoy buffers the request body and hands it to the AI ext_proc processor to read/route on `model`. Body-parse work happens out-of-process relative to the Envoy worker (in the ext_proc processor). C++ core + ext_proc. |
+| Engine | Request body handling | Grounding |
+|---|---|---|
+| Praxis AI | Bounded buffer (`BodyMode::StreamBuffer`). `model_to_header` parses incrementally within the buffer with **early-exit** once `model` is found; classifier / `model_rewrite` do a full `serde_json` decode at end-of-stream. Native Rust parse, in-process. | `praxis/t2.yaml` `extract-model` chain → `model_to_header` (header `X-AI-Model`), matched by the `router` in the `routing` chain. |
+| agentgateway | Full buffer in-process (`read_body_with_limit`), native JSON parse to read `model`, apply aliases, inject `stream_options`. Source explicitly notes it buffers "just due to how our interface works." Rust, in-process. | `agentgateway/t2.yaml` `llm.models[]` — the `llm:` path always parses + routes (no route-only mode; see `NOTES.md`). |
+| Envoy AI Gateway ⏳ | Envoy buffers the request body and hands it to the AI ext_proc processor to read/route on `model`. Body-parse work happens out-of-process relative to the Envoy worker (in the ext_proc processor). C++ core + ext_proc. | Pending standalone config. |
 
 Verdict: **request-body buffering is comparable across all three** — this
 tier is fair. The differentiators are parse implementation (Rust vs Rust
@@ -164,33 +175,42 @@ handicap we impose; we disclose it in the ledger rather than hide it.
 
 ### Non-streaming response (T2, token counting)
 
-| Engine | Non-streaming response handling |
-|---|---|
-| Praxis AI | Buffers the full JSON response (bounded, default 1 MiB) to locate `usage`, extracts **provider-returned** counts. No local tokenization. Overflow past cap → status header, extraction abandoned. |
-| agentgateway | Buffered path (`buffer_response`) for non-streaming; provider `usage` reconciled against a request-time estimate. Optional local **tiktoken-rs** prompt tokenization gated by `tokenize` flag (default off; documented "expensive"). |
-| Envoy AI Gateway | ext_proc processor reads the response body to extract provider `usage` and emit token metadata. Provider usage; buffered response body mode for non-streaming. |
+| Engine | Non-streaming response handling | Grounding |
+|---|---|---|
+| Praxis AI | Buffers the full JSON response (bounded, default 1 MiB) to locate `usage`, extracts **provider-returned** counts. No local tokenization. Overflow past cap → status header, extraction abandoned. | `praxis/t2.yaml` `token_count` filter, `provider: openai`. Praxis ships no local tokenizer, so provider-usage is its only mode. |
+| agentgateway | Buffered path (`buffer_response`) for non-streaming; provider `usage` reconciled against a request-time estimate. Optional local **tiktoken-rs** prompt tokenization gated by `tokenize` flag (default off; documented "expensive"). | `agentgateway/t2.yaml` `params.tokenize: false` on every model — local tokenization explicitly OFF. |
+| Envoy AI Gateway ⏳ | ext_proc processor reads the response body to extract provider `usage` and emit token metadata. Provider usage; buffered response body mode for non-streaming. | Pending standalone config. |
 
 Fairness lever: agentgateway's `tokenize` flag is a **local tokenization**
 path that does more work than reading provider usage. To keep T2 matched,
 the default T2 config uses **provider-returned usage only** on all three
 (Praxis has no local tokenizer, so this is its only mode; agentgateway
-`tokenize` is left off). A local-tokenization variant is deferred to a
-later run (out of scope for v1 per the tight-scope decision).
+`tokenize: false` in the checked-in config). A local-tokenization variant
+is deferred to a later run (out of scope for v1 per the tight-scope
+decision).
+
+Parity check (verified): with the mock returning a known `usage` block,
+both built engines report the provider counts unchanged — the mock
+computes real usage from the tokens it emits (`bench/mock-llm`), so
+divergence would be visible. Disclosed, not scored.
 
 ### Streaming (SSE) response (T2, token counting) — all engines INCREMENTAL
 
-| Engine | Streaming response handling |
-|---|---|
-| Praxis AI | `BodyMode::Stream`. Bounded incremental SSE scanner parses one completed event at a time; oversized events **dropped, not buffered**; provider usage read from the terminal event; counts finalized at end-of-stream. Never buffers the stream. |
-| agentgateway | Incremental `SseDecoder` over chunks (`process_streaming`), forces `stream_options.include_usage=true`, parses usage from streamed events, finalizes at stream end. Never buffers the stream. |
-| Envoy AI Gateway | ext_proc streamed response-body mode: the processor sees SSE chunks incrementally and tallies usage from streamed events / terminal frame. **Verify empirically** that the streamed (not buffered) ext_proc response-body mode is in effect — measure TTFB to confirm chunks are not withheld. |
+| Engine | Streaming response handling | Grounding |
+|---|---|---|
+| Praxis AI | `BodyMode::Stream`. Bounded incremental SSE scanner parses one completed event at a time; oversized events **dropped, not buffered**; provider usage read from the terminal event; counts finalized at end-of-stream. Never buffers the stream. | `praxis/t2.yaml` `token_count`; TTFB gate PASS through the harness (TTFB ≪ completion under a per-chunk mock delay). |
+| agentgateway | Incremental `SseDecoder` over chunks (`process_streaming`), forces `stream_options.include_usage=true`, parses usage from streamed events, finalizes at stream end. Never buffers the stream. | `agentgateway/t2.yaml` `llm:` path; TTFB gate PASS through the harness. |
+| Envoy AI Gateway ⏳ | ext_proc streamed response-body mode: the processor sees SSE chunks incrementally and tallies usage from streamed events / terminal frame. **Must verify empirically** that the streamed (not buffered) ext_proc response-body mode is in effect. | Pending — publication gated on the TTFB check once built. |
 
-Verdict: **all three stream incrementally** — this cell is fair *provided
-the harness does not buffer* and *provided Envoy AI Gateway's ext_proc is
-in streamed response-body mode* (confirm via TTFB). Disclosed asymmetry:
-all three inject/require `include_usage` on the upstream request, so the
-mock must emit a terminal usage event. The Envoy ext_proc streamed-mode
-verification is an explicit gate before publishing streaming numbers.
+Verdict: **the two built engines stream incrementally** — confirmed by the
+harness TTFB fairness gate (`bench/scripts/ttfb-probe.sh`): with a per-chunk
+delay applied at the mock, TTFB is a tiny fraction of full-completion time,
+so neither buffers-then-forwards. This cell is fair *provided the harness
+does not buffer* (it consumes SSE incrementally) and, for Envoy AI Gateway,
+*provided its ext_proc runs in streamed response-body mode* — an explicit
+publication gate once that engine lands. Disclosed asymmetry: all engines
+inject/require `include_usage` on the upstream request, so the mock emits a
+terminal usage event.
 
 ### Known version/config hazards (must be pinned)
 
@@ -199,9 +219,12 @@ verification is an explicit gate before publishing streaming numbers.
   buffering, not streaming. Gate publication of streaming numbers on a
   TTFB check that confirms incremental delivery.
 - **agentgateway `tokenize`**: off for the matched T2 (v1 is
-  provider-usage-only across all engines).
-- Record each engine's exact image tag + **digest**, and the Envoy AI
-  Gateway + ext_proc-processor versions.
+  provider-usage-only across all engines) — `tokenize: false` in the
+  checked-in config.
+- Record each engine's exact image tag + **digest** (the runner writes
+  `meta.yaml` per cell; agentgateway is digest-pinned in its `compose.yaml`,
+  the bench Praxis image is built from `bench/engines/praxis/Dockerfile`),
+  and, once built, the Envoy AI Gateway + ext_proc-processor versions.
 
 ## Upstream: deterministic mock LLM server
 
