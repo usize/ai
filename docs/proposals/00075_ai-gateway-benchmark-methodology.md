@@ -108,6 +108,24 @@ Each tier is run in both response modes (below). We report per-tier so the
 *marginal* cost of token metering (T2 − T1) is attributable, and the cost
 of parse+route (T1 − mock-baseline) is isolated.
 
+**Tier separability is engine-dependent (disclosed, not faked).** Not
+every engine can be configured to do T1 *without* T2. Verified against
+pinned images:
+
+- **Praxis AI** — separable. `model_to_header` + `router` gives a genuine
+  route-only T1; `token_count` adds T2. Both configs validated.
+- **agentgateway** — **not separable**. Its `llm:` data path always parses,
+  routes, *and* meters tokens; there is no route-only mode (telemetry
+  config only controls where counts go, not whether they are computed).
+  Its single config is therefore **T2**, and we do **not** publish a T1
+  number for it. The honest apples-to-apples row is Praxis-T2 vs
+  agentgateway-T2. (Verified against agentgateway v1.5.0.)
+- **Envoy AI Gateway** — to be determined during its spike.
+
+Where an engine lacks a separable T1, its T1 cell is left empty in the
+results with this reason, rather than reporting a T2 number as if it were
+T1.
+
 ## Response-mode axis (cross-cutting)
 
 Every tier runs in both modes:

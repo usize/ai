@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=https://agentgateway.dev/schema/config
+#
+# agentgateway — Benchmark Tier T2: parse + route by model + token counting.
+#
+# agentgateway's `llm:` mode parses the request body, routes by the "model"
+# field, and meters tokens as one inseparable data path (see NOTES.md — there
+# is no route-only mode, so this config also stands in for the T1 comparison
+# with that asymmetry disclosed). Token counting uses provider-returned usage;
+# `tokenize: false` keeps agentgateway's local tiktoken path OFF, matching the
+# v1 provider-usage-only fairness rule.
+#
+# Upstream is the benchmark mock LLM. `baseUrl` expands to host + port + tls,
+# and an http:// URL selects plaintext to the upstream.
+#
+# Verified against agentgateway v1.5.0
+# (ghcr.io/agentgateway/agentgateway@sha256:bf2f339ef326d32def2aaeb44b1b4549801293c19b89e764a4228667d97d9896)
+# with `--validate-only` and a live request through the mock.
+#
+# Run (standalone, for local checks):
+#   agentgateway -f bench/engines/agentgateway/t2.yaml
+
+llm:
+  port: 3000
+  models:
+    - name: bench-model-a
+      provider: openAI
+      params:
+        baseUrl: http://mock-llm:9000
+        apiKey: bench-key
+        tokenize: false # provider-usage only; local tokenization off (fairness rule)
+    - name: bench-model-b
+      provider: openAI
+      params:
+        baseUrl: http://mock-llm:9000
+        apiKey: bench-key
+        tokenize: false
