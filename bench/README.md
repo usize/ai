@@ -14,9 +14,14 @@ measure who does it more efficiently — not raw byte forwarding.
 
 | Engine | Runtime | Status |
 |---|---|---|
-| Praxis AI | Rust (Pingora) | planned (this repo) |
-| agentgateway | Rust (Tokio + Hyper) | planned |
+| Praxis AI | Rust (Pingora) | built (T1 + T2) |
+| agentgateway | Rust (Tokio + Hyper) | built (T2 only — tiers not separable) |
 | Envoy AI Gateway | Envoy (C++) + ext_proc | planned (added after the two Rust engines) |
+
+agentgateway's `llm:` path always parses + routes + meters, with no route-only
+mode, so it has no separable T1; the honest apples-to-apples row is Praxis-T2
+vs agentgateway-T2. Praxis T1 is reported separately as the marginal cost of
+token metering. See `bench/engines/agentgateway/NOTES.md`.
 
 All three are OSS and freely publishable. Kong AI Gateway was considered
 and dropped for v1 (`ai-proxy` is Enterprise-tier; benchmark-publication
@@ -27,11 +32,84 @@ terms unverified). Rationale is documented in the methodology.
 ```
 bench/
   mock-llm/     deterministic OpenAI-shaped mock upstream (unary + SSE)
-  engines/      per-engine, per-tier configs (praxis/, agentgateway/, envoy-ai-gateway/)
-  load/         vegeta targets / fortio parameters
+  engines/      per-engine compose stacks + configs
+    baseline/   mock published with NO gateway — the added-latency floor
+    praxis/     t1.yaml, t2.yaml, compose.yaml, Dockerfile (bench-only build)
+    agentgateway/  t2.yaml, compose.yaml, NOTES.md (pinned digest)
+  load/         vegeta/fortio request bodies (chat-unary.json, chat-stream.json)
   scripts/      runner + results processing
-  results/      raw artifacts + generated charts (gitignored except .gitkeep)
+  results/      raw artifacts + summaries (gitignored except .gitkeep)
 ```
+
+## Running
+
+Build the images once (mock + bench-only Praxis; agentgateway pulls a
+digest-pinned image on first run):
+
+```console
+podman build -t bench-mock-llm:latest bench/mock-llm
+podman build -t praxis-ai:0.3.0 -f bench/engines/praxis/Dockerfile .
+```
+
+> The bench-only Praxis Dockerfile pins `rust:1.97-alpine` to sidestep a cargo
+> parse bug in the shipped `Containerfile`'s `rust:1.98-alpine` base
+> (brotli-decompressor). Drop it once the top-level image builds cleanly.
+
+Then run the full, hardened comparison — every cell repeated N times, with
+median + stddev and baseline-subtracted *added* latency:
+
+```console
+bench/scripts/run-repeats.sh <run-id> 5      # 5 repeats (recommended)
+```
+
+Or a single pass (one measurement per cell — fast smoke, not publishable):
+
+```console
+bench/scripts/run-all.sh <run-id>
+```
+
+Or one cell in isolation:
+
+```console
+bench/scripts/run.sh praxis t2               # engine + tier
+bench/scripts/run.sh baseline none           # the floor cell
+```
+
+Aggregate an existing multi-repeat run without re-running it:
+
+```console
+bench/scripts/aggregate.py bench/results/<run-id>
+```
+
+Shared knobs (identical across every engine, so numbers stay comparable):
+`RATE`, `DURATION`, `WARMUP`, `CONNS`, `FORTIO_N`, `GATEWAY_CPUS`,
+`GATEWAY_MEM`, `REPEATS`.
+
+### The baseline (added-latency floor)
+
+The `baseline` cell publishes the mock **directly to the host with no gateway
+in the path**, under the same host, load, and payloads as the engine cells.
+`aggregate.py` subtracts its median latency from each engine cell to report
+*added* latency — the cost the gateway itself imposes, which is the number AI-
+Gateway buyers care about. It also confirms the mock is never the bottleneck at
+the rates we drive the engines.
+
+### Publishable-numbers checklist
+
+Single-shot numbers on a shared laptop are noise. Before quoting results:
+
+1. Run on a **quiet, dedicated Linux host** (bare metal or a pinned VM), not a
+   dev laptop or a noisy CI shared runner. macOS runs containers in a VM, which
+   adds latency and variance — fine for harness development, not for headline
+   numbers.
+2. Use **`run-repeats.sh` with ≥5 repeats** and report the median ± stddev the
+   aggregator prints; a wide stddev means the host was contended — re-run.
+3. Confirm the **stream gate reads PASS on every repeat** before publishing any
+   streaming column.
+4. Keep the **CPU/memory caps identical** across engines (defaults: 2 CPU / 1 GB
+   for the gateway, 4 CPU / 2 GB for the mock) and record them (the runner
+   writes `meta.yaml` per cell with versions, image digests, and caps).
+5. Publish alongside the **per-engine processing ledger** from the methodology.
 
 ## Processing tiers
 

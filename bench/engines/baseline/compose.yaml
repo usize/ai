@@ -1,0 +1,35 @@
+# Mock-baseline stack: the mock upstream published DIRECTLY to the host, with
+# NO gateway in the path.
+#
+# This measures the floor — client -> mock latency and the mock's own max
+# throughput — under the same host, same load, same payloads as the engine
+# cells. Subtract this cell's latency from an engine cell to get the engine's
+# *added* latency (the number AI-Gateway buyers actually care about). It also
+# proves the mock is never the bottleneck at the rates we drive the engines.
+#
+# The mock is given the SAME resource budget it gets in every engine stack, so
+# its behavior here matches its behavior behind a gateway.
+#
+#   podman compose -f bench/engines/baseline/compose.yaml up
+#
+# The runner treats "baseline" as a pseudo-engine with a single tier ("none").
+
+services:
+  # Named "gateway" so the shared runner (run.sh) can find it with the same
+  # `compose ps -q gateway` lookup it uses for real engines. Here it IS the
+  # mock, published straight to the host — there is no proxy hop.
+  gateway:
+    image: ${MOCK_IMAGE:-localhost/bench-mock-llm:latest}
+    environment:
+      MOCK_ADDR: "0.0.0.0:9000"
+      MOCK_THINK_MS: "${MOCK_THINK_MS:-0}"
+      MOCK_CHUNK_MS: "${MOCK_CHUNK_MS:-0}"
+    ports:
+      - "${GATEWAY_PORT:-8080}:9000"
+    networks: [bench]
+    # Same budget the mock gets inside every engine stack.
+    cpus: "4.0"
+    mem_limit: 2g
+
+networks:
+  bench: {}

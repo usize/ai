@@ -257,17 +257,27 @@ Aligned with #1082's vocabulary so both efforts speak the same language:
   engine's reported usage match the mock's known values, unary and
   streaming? Divergence is disclosed, not scored.
 
+Every metric is reported as the **median across ≥5 independent repeats**,
+each a fresh stack-up/measure/tear-down cycle, with the **sample standard
+deviation** disclosed alongside. A single measurement on a shared host is
+noise; a wide stddev signals a contended host and invalidates the run. The
+harness computes this automatically (`run-repeats.sh` → `aggregate.py`).
+
 ## Reproducibility deliverables
 
 Modeled on #1082's requirements:
 
 1. Exact image tag **and digest** for every engine + the mock.
 2. Harness version/commit, load-generator version, full parameter set.
-3. Hardware profile (instance type, vCPU, RAM, kernel).
+3. Hardware profile (instance type, vCPU, RAM, kernel) — a quiet, dedicated
+   Linux host, not a dev laptop or noisy shared CI runner.
 4. Every engine config file, checked in, doing exactly its tier's work.
-5. Raw result artifacts + the generated charts.
+5. Raw result artifacts (all repeats) + the generated summary/charts.
 6. The processing ledger above, published with the results.
-7. A one-command reproduction (`make bench` or equivalent).
+7. Repeat count (≥5), reported as median ± stddev per metric.
+8. A one-command reproduction: `bench/scripts/run-repeats.sh <run-id> 5`
+   (results/ is gitignored — the harness + methodology are the deliverable,
+   not one machine's numbers).
 
 ## Settled decisions (v1)
 
