@@ -10,6 +10,10 @@ This is a *separate, narrower* effort than the core-proxy overhead benchmark
 in praxis-proxy/praxis#1082: here every engine does real AI work, and we
 measure who does it more efficiently — not raw byte forwarding.
 
+**[→ Latest results report (`REPORT.md`)](REPORT.md)** — methodology summary,
+proof via config links, and a median±stddev results table. Generated from a
+run with `bench/scripts/report.py`; regenerate after any run.
+
 ## Engines under test
 
 | Engine | Runtime | Status |
@@ -85,6 +89,19 @@ bench/scripts/aggregate.py bench/results/<run-id>   # re-aggregate
 Shared knobs (identical across every engine, so numbers stay comparable):
 `RATE`, `DURATION`, `WARMUP`, `CONNS`, `FORTIO_N`, `GATEWAY_CPUS`,
 `GATEWAY_MEM`, `REPEATS`.
+
+### Generating the report
+
+`REPORT.md` is generated from a run's raw artifacts, so it never drifts from
+the measurements:
+
+```console
+bench/scripts/report.py bench/results/<run-id> \
+  --title "AI Gateway Benchmark — Results" \
+  --host "<cpu, ram, os, container engine>" \
+  --caveat "<disclosure if not a clean dedicated host>" \
+  > bench/REPORT.md
+```
 
 ### The baseline (added-latency floor)
 
