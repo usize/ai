@@ -1,0 +1,39 @@
+# Praxis AI benchmark stack: mock upstream + Praxis proxy.
+#
+# The engine and mock share a network so the config's "mock-llm:9000" resolves.
+# The engine port is published to the host for vegeta/fortio. CPU/memory are
+# capped so the resource-footprint metric is measured under a fixed budget,
+# identical across engines (see the sibling compose files).
+#
+# Select the tier with TIER (t1 or t2), defaulting to t2 (the headline tier):
+#   TIER=t2 podman compose -f bench/engines/praxis/compose.yaml up
+#
+# Image is built locally by `make container` (praxis-ai:${PRAXIS_VERSION}).
+
+services:
+  mock-llm:
+    image: ${MOCK_IMAGE:-localhost/bench-mock-llm:latest}
+    environment:
+      MOCK_ADDR: "0.0.0.0:9000"
+      MOCK_THINK_MS: "${MOCK_THINK_MS:-0}"
+      MOCK_CHUNK_MS: "${MOCK_CHUNK_MS:-0}"
+    networks: [bench]
+    # Give the upstream ample, fixed resources so it is never the bottleneck.
+    cpus: "4.0"
+    mem_limit: 2g
+
+  gateway:
+    image: praxis-ai:${PRAXIS_VERSION:-0.3.0}
+    command: ["-c", "/config/${TIER:-t2}.yaml"]
+    volumes:
+      - ./:/config:ro,z
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    networks: [bench]
+    depends_on: [mock-llm]
+    # Fixed budget for the engine under test — identical across all engines.
+    cpus: "${GATEWAY_CPUS:-2.0}"
+    mem_limit: "${GATEWAY_MEM:-1g}"
+
+networks:
+  bench: {}

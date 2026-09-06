@@ -1,0 +1,38 @@
+# agentgateway benchmark stack: mock upstream + agentgateway proxy.
+#
+# Only t2 exists for agentgateway (its LLM path always parses+routes+meters;
+# see NOTES.md). CPU/memory caps match the other engines for a fair
+# resource-footprint comparison. The engine's llm.port (3000) is published to
+# the host for vegeta/fortio; admin/stats/readiness ports are left unpublished
+# so they stay off the measured path.
+#
+#   podman compose -f bench/engines/agentgateway/compose.yaml up
+#
+# Image is pinned by digest for reproducibility.
+
+services:
+  mock-llm:
+    image: ${MOCK_IMAGE:-localhost/bench-mock-llm:latest}
+    environment:
+      MOCK_ADDR: "0.0.0.0:9000"
+      MOCK_THINK_MS: "${MOCK_THINK_MS:-0}"
+      MOCK_CHUNK_MS: "${MOCK_CHUNK_MS:-0}"
+    networks: [bench]
+    cpus: "4.0"
+    mem_limit: 2g
+
+  gateway:
+    # agentgateway v1.5.0 — pin by digest, not tag, for reproducibility.
+    image: ghcr.io/agentgateway/agentgateway@sha256:bf2f339ef326d32def2aaeb44b1b4549801293c19b89e764a4228667d97d9896
+    command: ["-f", "/config/t2.yaml"]
+    volumes:
+      - ./:/config:ro,z
+    ports:
+      - "${GATEWAY_PORT:-8080}:3000"
+    networks: [bench]
+    depends_on: [mock-llm]
+    cpus: "${GATEWAY_CPUS:-2.0}"
+    mem_limit: "${GATEWAY_MEM:-1g}"
+
+networks:
+  bench: {}
