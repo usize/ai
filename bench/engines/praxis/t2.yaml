@@ -1,0 +1,58 @@
+# Praxis AI — Benchmark Tier T2: T1 + token counting from provider usage.
+#
+# Adds token metering on top of T1's parse+route. token_count reads the
+# response body (incremental SSE scanner for streaming, bounded buffer for
+# unary) and extracts the provider-returned usage — no local tokenization,
+# matching the v1 fairness rule that every engine uses provider usage only.
+# token_usage_headers is declared before token_count so its response hook runs
+# after token_count has populated filter_metadata (response hooks run in
+# reverse declared order).
+#
+# Run (standalone, for local checks):
+#   cargo run -p praxis-ai-proxy -- -c bench/engines/praxis/t2.yaml
+
+listeners:
+  - name: gateway
+    address: "0.0.0.0:8080"
+    filter_chains:
+      - extract-model
+      - routing
+
+filter_chains:
+  # T1: parse the JSON body and promote "model" to X-AI-Model.
+  - name: extract-model
+    filters:
+      - filter: model_to_header
+        header: X-AI-Model
+
+  - name: routing
+    filters:
+      - filter: router
+        routes:
+          - path_prefix: "/"
+            headers:
+              x-ai-model: "bench-model-a"
+            cluster: model-a
+          - path_prefix: "/"
+            headers:
+              x-ai-model: "bench-model-b"
+            cluster: model-b
+          - path_prefix: "/"
+            cluster: model-a
+
+      # T2: token counting. Order matters — see header comment.
+      - filter: token_usage_headers
+      - filter: token_count
+        provider: openai
+
+      - filter: load_balancer
+        clusters:
+          - name: model-a
+            endpoints:
+              - "mock-llm:9000"
+          - name: model-b
+            endpoints:
+              - "mock-llm:9000"
+
+insecure_options:
+  allow_private_endpoints: true # benchmark proxies to a local mock
