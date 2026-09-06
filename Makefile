@@ -8,6 +8,15 @@ CONTAINER_ENGINE ?= $(shell command -v podman 2>/dev/null || command -v docker 2
 OPENAI_CONFORMANCE_ARGS ?=
 V                ?=
 
+# Benchmark harness (bench/). The runner uses podman-specific commands
+# (compose, stats, container inspect), so the benchmark requires podman
+# regardless of the CONTAINER_ENGINE used for the release image.
+PODMAN           ?= $(shell command -v podman 2>/dev/null)
+BENCH_MOCK_IMAGE ?= bench-mock-llm:latest
+BENCH_PRAXIS_IMAGE ?= praxis-ai:$(VERSION)
+BENCH_RUN_ID     ?= latest
+BENCH_REPEATS    ?= 5
+
 # Experimental filter features are off by default in builds, so lint and
 # test explicitly enable them — otherwise the gated filter code is never
 # compiled, linted, or tested by CI.
@@ -25,6 +34,7 @@ endif
 	lint fmt doc audit coverage-check \
 	require-container-engine \
 	container container-run \
+	require-podman bench bench-quick bench-images bench-summary \
 	setup-hooks help \
 	patch-praxis unpatch-praxis
 
@@ -64,6 +74,39 @@ container: | require-container-engine
 
 container-run: | require-container-engine
 	$(CONTAINER_ENGINE) run --rm --network=host $(IMAGE):$(VERSION) 2>&1
+
+# -------------------------------------------------------------------
+# Benchmark (AI-gateway processing comparison, bench/)
+# -------------------------------------------------------------------
+
+require-podman:
+ifndef PODMAN
+	$(error podman not found — the benchmark runner requires podman (compose, stats, inspect))
+endif
+
+# Build the images the benchmark needs: the mock upstream and a bench-only
+# Praxis image (see bench/engines/praxis/Dockerfile for why it is separate).
+# agentgateway is pulled by digest on first run (pinned in its compose.yaml).
+bench-images: | require-podman
+	$(PODMAN) build -t $(BENCH_MOCK_IMAGE) bench/mock-llm
+	$(PODMAN) build -t $(BENCH_PRAXIS_IMAGE) -f bench/engines/praxis/Dockerfile .
+
+# Full, publishable comparison: build images, then run every cell
+# BENCH_REPEATS times and aggregate to median +/- stddev with baseline-
+# subtracted added latency. Run on a quiet, dedicated Linux host for
+# headline numbers (see bench/README.md).
+#   make bench BENCH_RUN_ID=2026-09-06 BENCH_REPEATS=5
+bench: bench-images
+	bench/scripts/run-repeats.sh $(BENCH_RUN_ID) $(BENCH_REPEATS)
+
+# Single pass (one measurement per cell) — a fast smoke check, not
+# publishable numbers.
+bench-quick: bench-images
+	bench/scripts/run-all.sh $(BENCH_RUN_ID)
+
+# Re-aggregate an existing multi-repeat run without re-measuring.
+bench-summary:
+	bench/scripts/aggregate.py bench/results/$(BENCH_RUN_ID)
 
 # -------------------------------------------------------------------
 # Test
@@ -241,6 +284,13 @@ help:
 	@echo "Container:"
 	@echo "  container            build praxis-ai container image"
 	@echo "  container-run        run container in foreground (host network)"
+	@echo ""
+	@echo "Benchmark (requires podman):"
+	@echo "  bench                build images + run repeated AI-gateway comparison"
+	@echo "  bench-quick          single-pass smoke run (not publishable)"
+	@echo "  bench-images         build mock + bench Praxis images only"
+	@echo "  bench-summary        re-aggregate an existing run (BENCH_RUN_ID=...)"
+	@echo "                       vars: BENCH_RUN_ID, BENCH_REPEATS (default 5)"
 	@echo ""
 	@echo "Praxis override:"
 	@echo "  patch-praxis         use ../praxis path deps instead of crates.io"

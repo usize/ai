@@ -298,9 +298,10 @@ Modeled on #1082's requirements:
 5. Raw result artifacts (all repeats) + the generated summary/charts.
 6. The processing ledger above, published with the results.
 7. Repeat count (≥5), reported as median ± stddev per metric.
-8. A one-command reproduction: `bench/scripts/run-repeats.sh <run-id> 5`
-   (results/ is gitignored — the harness + methodology are the deliverable,
-   not one machine's numbers).
+8. A one-command reproduction: `make bench BENCH_RUN_ID=<id> BENCH_REPEATS=5`
+   (wraps `bench/scripts/run-repeats.sh`; builds the images first). results/
+   is gitignored — the harness + methodology are the deliverable, not one
+   machine's numbers.
 
 ## Settled decisions (v1)
 

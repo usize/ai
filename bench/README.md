@@ -43,42 +43,43 @@ bench/
 
 ## Running
 
-Build the images once (mock + bench-only Praxis; agentgateway pulls a
-digest-pinned image on first run):
+Requires **podman** (the runner uses `podman compose`/`stats`/`inspect`).
+
+One command builds the images and runs the full, hardened comparison —
+every cell repeated N times, with median + stddev and baseline-subtracted
+*added* latency:
 
 ```console
-podman build -t bench-mock-llm:latest bench/mock-llm
-podman build -t praxis-ai:0.3.0 -f bench/engines/praxis/Dockerfile .
+make bench BENCH_RUN_ID=<run-id> BENCH_REPEATS=5
 ```
 
-> The bench-only Praxis Dockerfile pins `rust:1.97-alpine` to sidestep a cargo
-> parse bug in the shipped `Containerfile`'s `rust:1.98-alpine` base
-> (brotli-decompressor). Drop it once the top-level image builds cleanly.
-
-Then run the full, hardened comparison — every cell repeated N times, with
-median + stddev and baseline-subtracted *added* latency:
+Fast smoke (single pass per cell — not publishable):
 
 ```console
-bench/scripts/run-repeats.sh <run-id> 5      # 5 repeats (recommended)
+make bench-quick BENCH_RUN_ID=<run-id>
 ```
 
-Or a single pass (one measurement per cell — fast smoke, not publishable):
+Other Make targets: `make bench-images` (build the mock + bench Praxis
+images only), `make bench-summary BENCH_RUN_ID=<run-id>` (re-aggregate an
+existing run without re-measuring).
+
+> The bench-only Praxis Dockerfile (`bench/engines/praxis/Dockerfile`) pins
+> `rust:1.97-alpine` to sidestep a cargo parse bug in the shipped
+> `Containerfile`'s `rust:1.98-alpine` base (brotli-decompressor). Drop it
+> once the top-level image builds cleanly. agentgateway pulls a digest-pinned
+> image on first run.
+
+### Running the scripts directly
+
+The Make targets are thin wrappers over `bench/scripts/`. To drive them
+yourself — e.g. one cell in isolation, or custom load knobs:
 
 ```console
-bench/scripts/run-all.sh <run-id>
-```
-
-Or one cell in isolation:
-
-```console
-bench/scripts/run.sh praxis t2               # engine + tier
+bench/scripts/run-repeats.sh <run-id> 5      # full comparison, 5 repeats
+bench/scripts/run-all.sh <run-id>            # single pass
+bench/scripts/run.sh praxis t2               # one cell (engine + tier)
 bench/scripts/run.sh baseline none           # the floor cell
-```
-
-Aggregate an existing multi-repeat run without re-running it:
-
-```console
-bench/scripts/aggregate.py bench/results/<run-id>
+bench/scripts/aggregate.py bench/results/<run-id>   # re-aggregate
 ```
 
 Shared knobs (identical across every engine, so numbers stay comparable):
