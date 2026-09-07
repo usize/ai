@@ -121,7 +121,7 @@ def main():
 
     print(f"# Benchmark summary: {run_dir.name}\n")
     print(
-        "| engine-tier | unary P50 | unary P90 | unary P99 | stream P50 | "
+        "| engine | unary P50 | unary P90 | unary P99 | stream P50 | "
         "stream P99 | max qps | peak CPU% | peak mem MB | stream gate | unary success |"
     )
     print("|" + "---|" * 12)

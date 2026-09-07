@@ -4,11 +4,11 @@
 Given a run directory that contains repeat sub-directories (rep-1/, rep-2/, ...),
 each holding the per-cell artifacts that run.sh produces, this computes the
 median and standard deviation of each headline metric ACROSS repeats, for each
-engine-tier cell. Single-shot numbers are noise on a shared machine; the median
-of N independent stack-up/measure/tear-down cycles is what we publish, with the
+engine. Single-shot numbers are noise on a shared machine; the median of N
+independent stack-up/measure/tear-down cycles is what we publish, with the
 stddev disclosed so readers can judge stability.
 
-If a "baseline-none" cell is present (the mock published with no gateway, see
+If a "baseline" cell is present (the mock published with no gateway, see
 bench/engines/baseline), its median latency is subtracted from every engine
 cell to report *added* latency — the cost the gateway itself imposes.
 
@@ -24,7 +24,7 @@ import sys
 
 import summarize
 
-BASELINE_CELL = "baseline-none"
+BASELINE_CELL = "baseline"
 
 
 def median(xs):
@@ -125,7 +125,7 @@ def main():
             f"stream P50 = {base_s50:.2f}ms. \"added\" columns subtract this floor._\n"
         )
     hdr = (
-        "| engine-tier | unary P50 (±sd) | added P50 | unary P99 | "
+        "| engine | unary P50 (±sd) | added P50 | unary P99 | "
         "stream P50 | max qps | peak CPU% | peak mem MB | stream gate | success |"
     )
     print(hdr)

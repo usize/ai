@@ -4,7 +4,7 @@ Pinned image:
 `ghcr.io/agentgateway/agentgateway@sha256:bf2f339ef326d32def2aaeb44b1b4549801293c19b89e764a4228667d97d9896`
 (tag `latest` at capture time = **v1.5.0**, git `fe673247`).
 
-## Tier separability: T1 and T2 are NOT separable
+## Processing path
 
 agentgateway's `llm:` mode is a single LLM data path that **always** parses
 the request body, routes by `model`, and reconciles token usage. There is
@@ -13,15 +13,12 @@ schema's telemetry/metrics config (`RawMetrics`, `TracingConfig`,
 `LoggingPolicy`) only controls **where** counts are emitted, not whether
 they are computed.
 
-**Fairness consequence:** agentgateway has no true T1 (route-only) cell.
-Its single config therefore represents **T2** (parse + route + token
-count). When comparing against Praxis's T1 (which genuinely does route-only
-via `model_to_header` + `router` with no token counting), this asymmetry
-must be stated: agentgateway's "T1" number necessarily includes token
-metering work Praxis's T1 does not do. Per the methodology's rule, we do
-not fake a T1 cell for agentgateway — we disclose that T1 is not
-separately measurable and compare its T2 against Praxis T2 as the honest
-apples-to-apples row.
+That path is exactly the work the benchmark measures — parse, route by
+`model`, count tokens — so the engine's natural mode is the measured mode
+here, with no benchmark-only configuration bending it into a shape it does
+not ship with. The Praxis config
+([`../praxis/gateway.yaml`](../praxis/gateway.yaml)) is composed to do the
+same three units of work and no more.
 
 ## Token counting
 

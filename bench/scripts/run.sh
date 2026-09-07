@@ -6,16 +6,15 @@
 # warms it, then drives identical load with vegeta (fixed-rate latency, unary
 # and streaming) and fortio (throughput sweep), captures the gateway
 # container's CPU/RSS, and runs the streaming TTFB fairness gate. Results are
-# written under bench/results/<run-id>/<engine>-<tier>/.
+# written under bench/results/<run-id>/<engine>/.
 #
 # Every engine is measured with the SAME parameters and the SAME published
 # host endpoint, so the numbers are comparable. See the methodology:
 # docs/proposals/00075_ai-gateway-benchmark-methodology.md
 #
 # Usage:
-#   bench/scripts/run.sh <engine> <tier>
-#   engine: praxis | agentgateway
-#   tier:   t1 | t2   (agentgateway supports only t2 — see its NOTES.md)
+#   bench/scripts/run.sh <engine>
+#   engine: baseline | praxis | agentgateway
 #
 # Env knobs (same defaults across engines):
 #   RATE       vegeta requests/sec for the latency test   (default 200)
@@ -28,18 +27,13 @@
 
 set -euo pipefail
 
-ENGINE="${1:?usage: run.sh <engine> <tier>}"
-TIER="${2:?usage: run.sh <engine> <tier>}"
+ENGINE="${1:?usage: run.sh <engine>}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 COMPOSE="${REPO_ROOT}/bench/engines/${ENGINE}/compose.yaml"
 LOAD_DIR="${REPO_ROOT}/bench/load"
 
 [ -f "$COMPOSE" ] || { echo "no compose for engine '${ENGINE}': $COMPOSE" >&2; exit 1; }
-if [ "$ENGINE" = "agentgateway" ] && [ "$TIER" != "t2" ]; then
-  echo "agentgateway supports only t2 (T1/T2 not separable — see NOTES.md)" >&2
-  exit 1
-fi
 
 # Fixed, identical-across-engines parameters.
 RATE="${RATE:-200}"
@@ -51,10 +45,9 @@ GATEWAY_PORT="${GATEWAY_PORT:-8080}"
 export GATEWAY_PORT
 export GATEWAY_CPUS="${GATEWAY_CPUS:-2.0}"
 export GATEWAY_MEM="${GATEWAY_MEM:-1g}"
-export TIER
 
 RUN_ID="${RUN_ID:-manual}"
-OUT="${REPO_ROOT}/bench/results/${RUN_ID}/${ENGINE}-${TIER}"
+OUT="${REPO_ROOT}/bench/results/${RUN_ID}/${ENGINE}"
 mkdir -p "$OUT"
 
 ENDPOINT="http://127.0.0.1:${GATEWAY_PORT}/v1/chat/completions"
@@ -63,7 +56,7 @@ COMPOSE_CMD=(podman compose -f "$COMPOSE")
 cleanup() { "${COMPOSE_CMD[@]}" down -v >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 
-echo ">>> [${ENGINE}/${TIER}] bringing up stack"
+echo ">>> [${ENGINE}] bringing up stack"
 "${COMPOSE_CMD[@]}" up -d >/dev/null 2>&1
 
 # ---- readiness: poll until the gateway returns 200 through the mock --------
@@ -80,7 +73,6 @@ done
 record_meta() {
   {
     echo "engine: ${ENGINE}"
-    echo "tier: ${TIER}"
     echo "rate: ${RATE}"
     echo "duration: ${DURATION}"
     echo "conns: ${CONNS}"
@@ -161,4 +153,4 @@ cat "${OUT}/ttfb.txt"
 kill "$SAMPLER_PID" >/dev/null 2>&1 || true
 wait "$SAMPLER_PID" 2>/dev/null || true
 
-echo ">>> [${ENGINE}/${TIER}] done -> ${OUT}"
+echo ">>> [${ENGINE}] done -> ${OUT}"

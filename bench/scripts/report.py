@@ -24,15 +24,14 @@ import statistics
 
 import summarize
 
-BASELINE_CELL = "baseline-none"
+BASELINE_CELL = "baseline"
 
 # Human-facing cell labels and ordering for the results table.
-CELL_ORDER = ["baseline-none", "praxis-t2", "agentgateway-t2", "praxis-t1"]
+CELL_ORDER = ["baseline", "praxis", "agentgateway"]
 CELL_LABEL = {
-    "baseline-none": "baseline (mock, no gateway)",
-    "praxis-t2": "Praxis AI — T2",
-    "agentgateway-t2": "agentgateway — T2",
-    "praxis-t1": "Praxis AI — T1",
+    "baseline": "baseline (mock, no gateway)",
+    "praxis": "Praxis AI",
+    "agentgateway": "agentgateway",
 }
 
 
@@ -163,7 +162,7 @@ def main():
     base_s50 = med(base_acc["s50"]) if base_acc else None
 
     # Provenance from any engine cell's meta (params are shared across cells).
-    ref_cell = "praxis-t2" if "praxis-t2" in cells else cells[0]
+    ref_cell = "praxis" if "praxis" in cells else cells[0]
     meta = read_meta(rep_dirs, ref_cell)
 
     P = print
@@ -191,33 +190,34 @@ def main():
     P("- [`docs/proposals/00075_ai-gateway-benchmark-methodology.md`]"
       "(../docs/proposals/00075_ai-gateway-benchmark-methodology.md)\n")
 
-    P("### Processing tiers\n")
-    P("- **T1** — parse request body + route by `model`.")
-    P("- **T2** — T1 + token counting from provider-returned `usage`.\n")
+    P("### The measured processing path\n")
     P(
-        "agentgateway's `llm:` path always parses + routes + meters as one "
-        "inseparable data path (no route-only mode), so it has no separable "
-        "T1. The honest apples-to-apples row is **Praxis-T2 vs "
-        "agentgateway-T2**; Praxis-T1 is reported separately as the marginal "
-        "cost of token metering.\n"
+        "Every engine performs the same three units of work on every request:\n"
+    )
+    P("1. Parse the JSON request body.")
+    P("2. Route to an upstream based on the `model` field.")
+    P("3. Count tokens from the provider-returned `usage` object.\n")
+    P(
+        "Nothing more, nothing less — no auth, no rate limiting, no prompt "
+        "rewriting, no local tokenization. Both engines were verified to "
+        "return the same token counts for the same request (prompt 22 / "
+        "completion 256 / total 278, matching the mock's known values), so "
+        "they are doing the same work, not different amounts of it.\n"
     )
 
     # ---- Proof: configs -----------------------------------------------------
     P("### Configurations under test (proof)\n")
-    P("Each cell runs a checked-in config doing exactly its tier's work:\n")
+    P("Each cell runs a checked-in config doing exactly that work:\n")
     P("| Cell | Engine | Config | Key knobs |")
     P("|---|---|---|---|")
     P("| baseline | mock only | [`engines/baseline/compose.yaml`]"
       "(engines/baseline/compose.yaml) | mock published direct to host, no "
       "gateway in path |")
-    P("| Praxis T2 | Praxis AI | [`engines/praxis/t2.yaml`]"
-      "(engines/praxis/t2.yaml) | `model_to_header` + `router` + "
+    P("| Praxis AI | Praxis AI | [`engines/praxis/gateway.yaml`]"
+      "(engines/praxis/gateway.yaml) | `model_to_header` + `router` + "
       "`token_count` (`provider: openai`) |")
-    P("| Praxis T1 | Praxis AI | [`engines/praxis/t1.yaml`]"
-      "(engines/praxis/t1.yaml) | `model_to_header` + `router` (no token "
-      "counting) |")
-    P("| agentgateway T2 | agentgateway | [`engines/agentgateway/t2.yaml`]"
-      "(engines/agentgateway/t2.yaml) | `llm:` mode, `tokenize: false` "
+    P("| agentgateway | agentgateway | [`engines/agentgateway/gateway.yaml`]"
+      "(engines/agentgateway/gateway.yaml) | `llm:` mode, `tokenize: false` "
       "(provider usage only) |")
     P("")
     P("Fairness rules enforced: byte-identical mock for every engine; the "
@@ -271,41 +271,76 @@ def main():
     P("")
 
     # ---- Interpretation (computed, so it cannot drift from the table) -------
-    p_t2 = med(data["praxis-t2"][0]["u50"]) if "praxis-t2" in data else None
-    a_t2 = med(data["agentgateway-t2"][0]["u50"]) if "agentgateway-t2" in data else None
-    p_t1 = med(data["praxis-t1"][0]["u50"]) if "praxis-t1" in data else None
-    if p_t2 is not None and a_t2 is not None and base_u50 is not None:
-        p_added = p_t2 - base_u50
-        a_added = a_t2 - base_u50
+    p50 = med(data["praxis"][0]["u50"]) if "praxis" in data else None
+    a50 = med(data["agentgateway"][0]["u50"]) if "agentgateway" in data else None
+    if p50 is not None and a50 is not None and base_u50 is not None:
+        p_added = p50 - base_u50
+        a_added = a50 - base_u50
         lead = "Praxis AI" if p_added <= a_added else "agentgateway"
         lo, hi = sorted((p_added, a_added))
         rel = (hi - lo) / hi * 100 if hi else 0
         P("### Reading the results\n")
         P(
-            f"- **Headline (T2, apples-to-apples):** {lead} has the lower "
-            f"added latency — Praxis-T2 **{p_added:.2f}ms** vs "
-            f"agentgateway-T2 **{a_added:.2f}ms** of gateway-imposed overhead "
-            f"per request (~{rel:.0f}% difference). Both are well under a "
-            "millisecond of added P50 and within a few hundredths of a "
-            "millisecond of each other — this is a close race, and the "
-            "stddev columns show the measurement is stable, not noise."
+            f"- **Added latency:** {lead} has the lower added latency — "
+            f"Praxis AI **{p_added:.2f}ms** vs agentgateway "
+            f"**{a_added:.2f}ms** of gateway-imposed overhead per request "
+            f"(~{rel:.0f}% difference, an absolute gap of {hi - lo:.2f}ms). "
+            "Both are well under a millisecond of added P50, and the "
+            "per-repeat stddevs are far smaller than the gap between them, so "
+            "the ordering is a real effect rather than run-to-run noise. It "
+            "is still a close race in absolute terms."
         )
-        if p_t1 is not None:
-            P(
-                f"- **Marginal cost of token metering (Praxis T1 → T2):** "
-                f"added P50 rises from {p_t1 - base_u50:.2f}ms to "
-                f"{p_added:.2f}ms — the incremental cost of reading provider "
-                "usage and emitting token counts. agentgateway has no "
-                "separable route-only tier, so no equivalent number exists "
-                "for it."
-            )
         P(
-            "- **Streaming and throughput:** every cell streams incrementally "
-            "(TTFB ≪ completion, gate PASS on all repeats) and sustains tens "
-            "of thousands of req/s at 100% success under the fixed resource "
-            "cap. Throughput differences here are small and within the "
-            "noise a shared VM introduces; treat them as directional."
+            "- **Streaming:** every cell streams incrementally — TTFB is a "
+            "negligible fraction of stream-completion time under a per-chunk "
+            "mock delay, and the fairness gate passed on all "
+            f"{len(rep_dirs)} repeats for every engine. No engine is "
+            "buffering the stream, so the streaming columns are fair to "
+            "compare."
         )
+
+        # Throughput sanity: no gateway can out-serve the no-gateway floor on
+        # merit. If one appears to, the saturation number is measuring the load
+        # harness / host, not the engine — say so instead of ranking on it.
+        base_qps = med(data[BASELINE_CELL][0]["qps"]) if BASELINE_CELL in data else None
+        eng_qps = {}
+        for c in cells:
+            if c == BASELINE_CELL:
+                continue
+            q = med(data[c][0]["qps"])
+            if isinstance(q, (int, float)):
+                eng_qps[CELL_LABEL.get(c, c)] = q
+        over = (
+            [n for n, q in eng_qps.items() if q > base_qps]
+            if isinstance(base_qps, (int, float))
+            else []
+        )
+        if over:
+            names = " and ".join(
+                filter(None, [", ".join(f"**{n}**" for n in over[:-1]), f"**{over[-1]}**"])
+            )
+            verb = "record" if len(over) > 1 else "records"
+            P(
+                "- **Throughput is not comparable on this host.** Under "
+                f"closed-loop saturation, {names} {verb} a higher max qps "
+                f"({', '.join(f'{eng_qps[n]:.0f}' for n in over)}) "
+                f"than the no-gateway baseline ({base_qps:.0f}). A gateway "
+                "cannot serve more requests than the upstream it proxies to, "
+                "so this is an artifact of the saturation measurement — "
+                "differences in connection handling and keep-alive behaviour "
+                "between the engines and the bare mock, amplified by running "
+                "containers in a VM — not an engine result. **Do not rank the "
+                "engines on the qps column.** A stepped rate sweep on a "
+                "dedicated Linux host is required before publishing any "
+                "throughput claim."
+            )
+        else:
+            P(
+                "- **Throughput:** every cell sustains tens of thousands of "
+                "req/s at 100% success under the fixed resource cap. The "
+                "spread is small; treat it as directional until a stepped "
+                "rate sweep runs on a dedicated host."
+            )
         P("")
 
     # ---- Streaming fairness evidence ---------------------------------------

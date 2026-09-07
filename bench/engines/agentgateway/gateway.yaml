@@ -1,13 +1,12 @@
 # yaml-language-server: $schema=https://agentgateway.dev/schema/config
 #
-# agentgateway — Benchmark Tier T2: parse + route by model + token counting.
+# agentgateway — benchmark configuration.
 #
-# agentgateway's `llm:` mode parses the request body, routes by the "model"
-# field, and meters tokens as one inseparable data path (see NOTES.md — there
-# is no route-only mode, so this config also stands in for the T1 comparison
-# with that asymmetry disclosed). Token counting uses provider-returned usage;
-# `tokenize: false` keeps agentgateway's local tiktoken path OFF, matching the
-# v1 provider-usage-only fairness rule.
+# The measured processing path: parse the request body, route by the "model"
+# field, and count tokens. agentgateway's `llm:` mode does all three as one
+# data path. Token counting uses provider-returned usage; `tokenize: false`
+# keeps agentgateway's local tiktoken path OFF, matching the fairness rule
+# that every engine uses provider usage only.
 #
 # Upstream is the benchmark mock LLM. `baseUrl` expands to host + port + tls,
 # and an http:// URL selects plaintext to the upstream.
@@ -17,7 +16,7 @@
 # with `--validate-only` and a live request through the mock.
 #
 # Run (standalone, for local checks):
-#   agentgateway -f bench/engines/agentgateway/t2.yaml
+#   agentgateway -f bench/engines/agentgateway/gateway.yaml
 
 llm:
   port: 3000

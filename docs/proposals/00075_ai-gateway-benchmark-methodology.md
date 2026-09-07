@@ -38,16 +38,16 @@ will beat one that JSON-decodes every body, and comparing the two is
 meaningless unless you are explicit that they are doing different work.
 Our methodology controls this two ways:
 
-1. **Matched processing tiers.** Every engine is configured to do the
-   *same* AI work at each tier. We do not let one engine skip parsing
-   while another parses.
-2. **A per-engine processing ledger.** For every engine × tier × response
-   mode we publish exactly what the engine does to the body (buffer the
-   full body? parse incrementally? provider-usage vs local tokenization?
-   buffer the SSE stream?). This is the fairness contract: any "they're
-   not doing the same work" objection is answered with a table, not an
-   assertion. Where an engine *cannot* be configured to match a tier, we
-   say so and exclude that cell rather than pretending parity.
+1. **A single matched processing path.** Every engine is configured to do
+   the *same* AI work on every request. We do not let one engine skip
+   parsing while another parses.
+2. **A per-engine processing ledger.** For every engine × response mode we
+   publish exactly what the engine does to the body (buffer the full body?
+   parse incrementally? provider-usage vs local tokenization? buffer the
+   SSE stream?). This is the fairness contract: any "they're not doing the
+   same work" objection is answered with a table, not an assertion. Where
+   an engine *cannot* be configured onto the matched path, we say so and
+   exclude it rather than pretending parity.
 
 ## Engines under test
 
@@ -93,42 +93,35 @@ Python GC). If we later want the Envoy+ext_proc architecture on the chart,
 it is a separate, clearly-labeled configuration — not substituted for
 agentgateway. This choice, and its rationale, is published.
 
-## Processing tiers
+## The measured processing path
 
-Guardrails deferred. Two tiers, each subsuming the previous.
+Guardrails deferred. One path, run by every engine, on every request:
 
-- **T1 — Parse + model-based routing.** Parse the JSON request body,
-  extract the `model` field, route to the correct upstream cluster/model.
-  This is the floor of any AI gateway; all three engines support it.
-- **T2 — T1 + token counting / usage metering.** In addition to T1, count
-  prompt + completion tokens and emit usage (headers and/or metadata),
-  from the provider-returned `usage` where available.
+1. **Parse the JSON request body.**
+2. **Route by `model`** to the correct upstream cluster/model.
+3. **Count tokens** from the provider-returned `usage` and emit them
+   (headers and/or metadata).
 
-Each tier is run in both response modes (below). We report per-tier so the
-*marginal* cost of token metering (T2 − T1) is attributable, and the cost
-of parse+route (T1 − mock-baseline) is isolated.
+Nothing else: no auth, no rate limiting, no prompt rewriting, no local
+tokenization. This is the irreducible work an AI gateway does that a byte
+proxy does not, and it is the smallest path every engine under test can
+run natively without benchmark-only contortions.
 
-**Tier separability is engine-dependent (disclosed, not faked).** Not
-every engine can be configured to do T1 *without* T2. Verified against
-pinned images:
+The choice of a single path is deliberate. Sub-paths (route-only, say)
+are not uniformly configurable across engines — agentgateway's `llm:` data
+path always parses, routes, *and* meters tokens, with no route-only mode
+(its telemetry config only controls where counts go, not whether they are
+computed; verified against v1.5.0). Measuring a slice one engine can
+express and another cannot would compare different work under one label.
+The full path is expressible by every engine, so that is what we measure.
 
-- **Praxis AI** — separable. `model_to_header` + `router` gives a genuine
-  route-only T1; `token_count` adds T2. Both configs validated.
-- **agentgateway** — **not separable**. Its `llm:` data path always parses,
-  routes, *and* meters tokens; there is no route-only mode (telemetry
-  config only controls where counts go, not whether they are computed).
-  Its single config is therefore **T2**, and we do **not** publish a T1
-  number for it. The honest apples-to-apples row is Praxis-T2 vs
-  agentgateway-T2. (Verified against agentgateway v1.5.0.)
-- **Envoy AI Gateway** — to be determined during its spike.
-
-Where an engine lacks a separable T1, its T1 cell is left empty in the
-results with this reason, rather than reporting a T2 number as if it were
-T1.
+The cost of the path itself is isolated by subtracting the mock baseline
+(load generator → mock, no gateway) from each engine's latency; the
+difference is the gateway's own added cost.
 
 ## Response-mode axis (cross-cutting)
 
-Every tier runs in both modes:
+The processing path is exercised in both response modes:
 
 - **Unary** — single JSON response body.
 - **SSE streaming** — `text/event-stream`, chunked, with a terminal usage
@@ -151,39 +144,40 @@ file in this repo (and, for the two built engines, reproduce it).
 
 **Verification status** per engine:
 
-- **Praxis AI** — ✅ verified: config `bench/engines/praxis/{t1,t2}.yaml`
+- **Praxis AI** — ✅ verified: config `bench/engines/praxis/gateway.yaml`
   runs through the harness; behaviors below confirmed end-to-end.
-- **agentgateway** — ✅ verified: config `bench/engines/agentgateway/t2.yaml`
-  (pinned digest, see `NOTES.md`) runs through the harness.
+- **agentgateway** — ✅ verified: config
+  `bench/engines/agentgateway/gateway.yaml` (pinned digest, see `NOTES.md`)
+  runs through the harness.
 - **Envoy AI Gateway** — ⏳ claimed from docs/source; **not yet built**.
   Rows are marked pending until its standalone stack lands and is measured.
 
-### Request body (T1, model routing) — all engines BUFFER the request body
+### Request body (parse + model routing) — all engines BUFFER the request body
 
 | Engine | Request body handling | Grounding |
 |---|---|---|
-| Praxis AI | Bounded buffer (`BodyMode::StreamBuffer`). `model_to_header` parses incrementally within the buffer with **early-exit** once `model` is found; classifier / `model_rewrite` do a full `serde_json` decode at end-of-stream. Native Rust parse, in-process. | `praxis/t2.yaml` `extract-model` chain → `model_to_header` (header `X-AI-Model`), matched by the `router` in the `routing` chain. |
-| agentgateway | Full buffer in-process (`read_body_with_limit`), native JSON parse to read `model`, apply aliases, inject `stream_options`. Source explicitly notes it buffers "just due to how our interface works." Rust, in-process. | `agentgateway/t2.yaml` `llm.models[]` — the `llm:` path always parses + routes (no route-only mode; see `NOTES.md`). |
+| Praxis AI | Bounded buffer (`BodyMode::StreamBuffer`). `model_to_header` parses incrementally within the buffer with **early-exit** once `model` is found; classifier / `model_rewrite` do a full `serde_json` decode at end-of-stream. Native Rust parse, in-process. | `praxis/gateway.yaml` `extract-model` chain → `model_to_header` (header `X-AI-Model`), matched by the `router` in the `routing` chain. |
+| agentgateway | Full buffer in-process (`read_body_with_limit`), native JSON parse to read `model`, apply aliases, inject `stream_options`. Source explicitly notes it buffers "just due to how our interface works." Rust, in-process. | `agentgateway/gateway.yaml` `llm.models[]` — the `llm:` path always parses + routes (see `NOTES.md`). |
 | Envoy AI Gateway ⏳ | Envoy buffers the request body and hands it to the AI ext_proc processor to read/route on `model`. Body-parse work happens out-of-process relative to the Envoy worker (in the ext_proc processor). C++ core + ext_proc. | Pending standalone config. |
 
 Verdict: **request-body buffering is comparable across all three** — this
-tier is fair. The differentiators are parse implementation (Rust vs Rust
+stage is fair. The differentiators are parse implementation (Rust vs Rust
 vs Envoy/ext_proc) and *where* the parse runs (in the proxy worker for the
 two Rust engines vs an ext_proc processor for Envoy AI Gateway). The
 Envoy ext_proc hop is inherent to that engine's architecture, not a
 handicap we impose; we disclose it in the ledger rather than hide it.
 
-### Non-streaming response (T2, token counting)
+### Non-streaming response (token counting)
 
 | Engine | Non-streaming response handling | Grounding |
 |---|---|---|
-| Praxis AI | Buffers the full JSON response (bounded, default 1 MiB) to locate `usage`, extracts **provider-returned** counts. No local tokenization. Overflow past cap → status header, extraction abandoned. | `praxis/t2.yaml` `token_count` filter, `provider: openai`. Praxis ships no local tokenizer, so provider-usage is its only mode. |
-| agentgateway | Buffered path (`buffer_response`) for non-streaming; provider `usage` reconciled against a request-time estimate. Optional local **tiktoken-rs** prompt tokenization gated by `tokenize` flag (default off; documented "expensive"). | `agentgateway/t2.yaml` `params.tokenize: false` on every model — local tokenization explicitly OFF. |
+| Praxis AI | Buffers the full JSON response (bounded, default 1 MiB) to locate `usage`, extracts **provider-returned** counts. No local tokenization. Overflow past cap → status header, extraction abandoned. | `praxis/gateway.yaml` `token_count` filter, `provider: openai`. Praxis ships no local tokenizer, so provider-usage is its only mode. |
+| agentgateway | Buffered path (`buffer_response`) for non-streaming; provider `usage` reconciled against a request-time estimate. Optional local **tiktoken-rs** prompt tokenization gated by `tokenize` flag (default off; documented "expensive"). | `agentgateway/gateway.yaml` `params.tokenize: false` on every model — local tokenization explicitly OFF. |
 | Envoy AI Gateway ⏳ | ext_proc processor reads the response body to extract provider `usage` and emit token metadata. Provider usage; buffered response body mode for non-streaming. | Pending standalone config. |
 
 Fairness lever: agentgateway's `tokenize` flag is a **local tokenization**
-path that does more work than reading provider usage. To keep T2 matched,
-the default T2 config uses **provider-returned usage only** on all three
+path that does more work than reading provider usage. To keep the path
+matched, every config counts tokens from **provider-returned usage only**
 (Praxis has no local tokenizer, so this is its only mode; agentgateway
 `tokenize: false` in the checked-in config). A local-tokenization variant
 is deferred to a later run (out of scope for v1 per the tight-scope
@@ -194,12 +188,12 @@ both built engines report the provider counts unchanged — the mock
 computes real usage from the tokens it emits (`bench/mock-llm`), so
 divergence would be visible. Disclosed, not scored.
 
-### Streaming (SSE) response (T2, token counting) — all engines INCREMENTAL
+### Streaming (SSE) response (token counting) — all engines INCREMENTAL
 
 | Engine | Streaming response handling | Grounding |
 |---|---|---|
-| Praxis AI | `BodyMode::Stream`. Bounded incremental SSE scanner parses one completed event at a time; oversized events **dropped, not buffered**; provider usage read from the terminal event; counts finalized at end-of-stream. Never buffers the stream. | `praxis/t2.yaml` `token_count`; TTFB gate PASS through the harness (TTFB ≪ completion under a per-chunk mock delay). |
-| agentgateway | Incremental `SseDecoder` over chunks (`process_streaming`), forces `stream_options.include_usage=true`, parses usage from streamed events, finalizes at stream end. Never buffers the stream. | `agentgateway/t2.yaml` `llm:` path; TTFB gate PASS through the harness. |
+| Praxis AI | `BodyMode::Stream`. Bounded incremental SSE scanner parses one completed event at a time; oversized events **dropped, not buffered**; provider usage read from the terminal event; counts finalized at end-of-stream. Never buffers the stream. | `praxis/gateway.yaml` `token_count`; TTFB gate PASS through the harness (TTFB ≪ completion under a per-chunk mock delay). |
+| agentgateway | Incremental `SseDecoder` over chunks (`process_streaming`), forces `stream_options.include_usage=true`, parses usage from streamed events, finalizes at stream end. Never buffers the stream. | `agentgateway/gateway.yaml` `llm:` path; TTFB gate PASS through the harness. |
 | Envoy AI Gateway ⏳ | ext_proc streamed response-body mode: the processor sees SSE chunks incrementally and tallies usage from streamed events / terminal frame. **Must verify empirically** that the streamed (not buffered) ext_proc response-body mode is in effect. | Pending — publication gated on the TTFB check once built. |
 
 Verdict: **the two built engines stream incrementally** — confirmed by the
@@ -218,9 +212,8 @@ terminal usage event.
   buffered, for the SSE cell — a buffered mode would make us measure
   buffering, not streaming. Gate publication of streaming numbers on a
   TTFB check that confirms incremental delivery.
-- **agentgateway `tokenize`**: off for the matched T2 (v1 is
-  provider-usage-only across all engines) — `tokenize: false` in the
-  checked-in config.
+- **agentgateway `tokenize`**: off (v1 is provider-usage-only across all
+  engines) — `tokenize: false` in the checked-in config.
 - Record each engine's exact image tag + **digest** (the runner writes
   `meta.yaml` per cell; agentgateway is digest-pinned in its `compose.yaml`,
   the bench Praxis image is built from `bench/engines/praxis/Dockerfile`),
@@ -271,7 +264,7 @@ zero-overhead reference; all "added latency" numbers are relative to it.
 Aligned with #1082's vocabulary so both efforts speak the same language:
 
 - **Added latency** P50 / P90 / P99 — end-to-end minus the mock baseline,
-  per tier per mode.
+  per response mode.
 - **TTFB** (streaming) P50 / P90 / P99.
 - **Max sustained throughput** (RPS) at a fixed error-rate ceiling.
 - **Resource footprint** — CPU and RSS of the gateway container at a
@@ -294,7 +287,8 @@ Modeled on #1082's requirements:
 2. Harness version/commit, load-generator version, full parameter set.
 3. Hardware profile (instance type, vCPU, RAM, kernel) — a quiet, dedicated
    Linux host, not a dev laptop or noisy shared CI runner.
-4. Every engine config file, checked in, doing exactly its tier's work.
+4. Every engine config file, checked in, doing exactly the measured
+   processing path's work and no more.
 5. Raw result artifacts (all repeats) + the generated summary/charts.
 6. The processing ledger above, published with the results.
 7. Repeat count (≥5), reported as median ± stddev per metric.
@@ -307,8 +301,10 @@ Modeled on #1082's requirements:
 
 - **Engines:** Praxis AI, agentgateway, Envoy AI Gateway (Kong dropped for
   licensing/publication risk; all three engines OSS and publishable).
-- **Fairness model:** matched processing tiers + published per-engine ledger.
-- **Tiers:** T1 (parse+route), T2 (+token count); guardrails deferred.
+- **Fairness model:** one matched processing path + published per-engine
+  ledger.
+- **Processing path:** parse + route by `model` + token count; guardrails
+  deferred.
 - **Response modes:** unary + SSE streaming.
 - **Upstream:** deterministic mock LLM (OpenAI shape).
 - **Load gen:** vegeta + fortio (aligns with praxis-bench).
@@ -326,7 +322,13 @@ Modeled on #1082's requirements:
 2. **Envoy ext_proc streamed response-body mode:** verify empirically (TTFB
    check) before publishing streaming numbers — see hazards.
 3. **Concurrency sweep + target rates:** pick the specific vegeta rate steps
-   and fortio concurrency levels for the headline profile.
+   and fortio concurrency levels for the headline profile. Blocking for
+   throughput: the current single-point fortio saturation run produced
+   engine qps *above* the no-gateway baseline, which is physically
+   impossible on merit and marks the number as an artifact of the
+   saturation measurement on a VM host. Max-throughput must not be
+   published until a stepped rate sweep on a dedicated Linux host puts the
+   baseline back on top. Latency and the streaming gate are unaffected.
 4. **Fold into praxis-bench:** timing of migrating this harness into the
    shared benchmarks repo once v1 is stable.
 

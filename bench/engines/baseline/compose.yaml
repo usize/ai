@@ -12,7 +12,8 @@
 #
 #   podman compose -f bench/engines/baseline/compose.yaml up
 #
-# The runner treats "baseline" as a pseudo-engine with a single tier ("none").
+# The runner treats "baseline" as a pseudo-engine, driven by the same
+# `run.sh baseline` entry point as the real engines.
 
 services:
   # Named "gateway" so the shared runner (run.sh) can find it with the same

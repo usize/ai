@@ -5,10 +5,9 @@
 # capped so the resource-footprint metric is measured under a fixed budget,
 # identical across engines (see the sibling compose files).
 #
-# Select the tier with TIER (t1 or t2), defaulting to t2 (the headline tier):
-#   TIER=t2 podman compose -f bench/engines/praxis/compose.yaml up
+#   podman compose -f bench/engines/praxis/compose.yaml up
 #
-# Image is built locally by `make container` (praxis-ai:${PRAXIS_VERSION}).
+# Image is built by `make bench-images` (praxis-ai:${PRAXIS_VERSION}).
 
 services:
   mock-llm:
@@ -24,7 +23,7 @@ services:
 
   gateway:
     image: praxis-ai:${PRAXIS_VERSION:-0.3.0}
-    command: ["-c", "/config/${TIER:-t2}.yaml"]
+    command: ["-c", "/config/gateway.yaml"]
     volumes:
       - ./:/config:ro,z
     ports:

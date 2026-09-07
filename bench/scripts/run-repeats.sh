@@ -3,8 +3,8 @@
 # Run the full AI-gateway comparison N times and aggregate to median + stddev.
 #
 # A single measurement on a shared machine is noise. This runs the whole set of
-# cells (baseline floor + every engine at the headline tier + Praxis T1) once
-# per repeat, each repeat with a fresh stack-up/measure/tear-down cycle, into
+# cells (baseline floor + every engine) once per repeat, each repeat with a
+# fresh stack-up/measure/tear-down cycle, into
 # its own rep-<n>/ sub-directory. aggregate.py then reports the median and
 # sample stddev of each metric across repeats, and subtracts the baseline floor
 # to show each engine's *added* latency.
@@ -28,24 +28,21 @@ echo "=== AI Gateway Benchmark: run '${BASE_RUN_ID}', ${REPEATS} repeats ==="
 
 # Cells, in order. Baseline first each repeat so the floor is measured under the
 # same machine conditions as the engines that follow it.
-#   "<engine> <tier>"
 CELLS=(
-  "baseline none"
-  "praxis t2"
-  "agentgateway t2"
-  # "envoy-ai-gateway t2"   # added after its standalone spike
-  "praxis t1"
+  baseline
+  praxis
+  agentgateway
+  # envoy-ai-gateway   # added after its standalone spike
 )
 
 for rep in $(seq 1 "$REPEATS"); do
   echo
   echo "--- repeat ${rep}/${REPEATS} ---"
-  # Each repeat writes under results/<run-id>/rep-<n>/<engine>-<tier>/ by
+  # Each repeat writes under results/<run-id>/rep-<n>/<engine>/ by
   # pointing run.sh's RUN_ID at the per-repeat sub-path.
   export RUN_ID="${BASE_RUN_ID}/rep-${rep}"
   for cell in "${CELLS[@]}"; do
-    # shellcheck disable=SC2086  # intentional word-split into two args
-    "${REPO_ROOT}/bench/scripts/run.sh" $cell
+    "${REPO_ROOT}/bench/scripts/run.sh" "$cell"
   done
 done
 

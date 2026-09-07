@@ -18,14 +18,9 @@ run with `bench/scripts/report.py`; regenerate after any run.
 
 | Engine | Runtime | Status |
 |---|---|---|
-| Praxis AI | Rust (Pingora) | built (T1 + T2) |
-| agentgateway | Rust (Tokio + Hyper) | built (T2 only — tiers not separable) |
+| Praxis AI | Rust (Pingora) | built |
+| agentgateway | Rust (Tokio + Hyper) | built |
 | Envoy AI Gateway | Envoy (C++) + ext_proc | planned (added after the two Rust engines) |
-
-agentgateway's `llm:` path always parses + routes + meters, with no route-only
-mode, so it has no separable T1; the honest apples-to-apples row is Praxis-T2
-vs agentgateway-T2. Praxis T1 is reported separately as the marginal cost of
-token metering. See `bench/engines/agentgateway/NOTES.md`.
 
 All three are OSS and freely publishable. Kong AI Gateway was considered
 and dropped for v1 (`ai-proxy` is Enterprise-tier; benchmark-publication
@@ -38,8 +33,8 @@ bench/
   mock-llm/     deterministic OpenAI-shaped mock upstream (unary + SSE)
   engines/      per-engine compose stacks + configs
     baseline/   mock published with NO gateway — the added-latency floor
-    praxis/     t1.yaml, t2.yaml, compose.yaml, Dockerfile (bench-only build)
-    agentgateway/  t2.yaml, compose.yaml, NOTES.md (pinned digest)
+    praxis/     gateway.yaml, compose.yaml, Dockerfile (bench-only build)
+    agentgateway/  gateway.yaml, compose.yaml, NOTES.md (pinned digest)
   load/         vegeta/fortio request bodies (chat-unary.json, chat-stream.json)
   scripts/      runner + results processing
   results/      raw artifacts + summaries (gitignored except .gitkeep)
@@ -81,8 +76,8 @@ yourself — e.g. one cell in isolation, or custom load knobs:
 ```console
 bench/scripts/run-repeats.sh <run-id> 5      # full comparison, 5 repeats
 bench/scripts/run-all.sh <run-id>            # single pass
-bench/scripts/run.sh praxis t2               # one cell (engine + tier)
-bench/scripts/run.sh baseline none           # the floor cell
+bench/scripts/run.sh praxis                  # one engine
+bench/scripts/run.sh baseline                # the floor cell
 bench/scripts/aggregate.py bench/results/<run-id>   # re-aggregate
 ```
 
@@ -128,14 +123,24 @@ Single-shot numbers on a shared laptop are noise. Before quoting results:
    for the gateway, 4 CPU / 2 GB for the mock) and record them (the runner
    writes `meta.yaml` per cell with versions, image digests, and caps).
 5. Publish alongside the **per-engine processing ledger** from the methodology.
+6. Sanity-check throughput against the floor: an engine cannot sustain more
+   qps than the **no-gateway baseline**. If it appears to, the saturation run
+   is measuring the harness/host, not the engine — do not publish the qps
+   column until a stepped rate sweep on a dedicated host puts the baseline on
+   top. `report.py` flags this automatically.
 
-## Processing tiers
+## The measured processing path
 
-- **T1** — parse request body + route by `model`.
-- **T2** — T1 + token counting from provider-returned `usage`.
+Every engine does the same three units of work on every request, and
+nothing else:
 
-Each tier runs in **unary** and **SSE streaming** modes. Guardrails and
-local tokenization are deferred (see methodology).
+1. Parse the JSON request body.
+2. Route by `model`.
+3. Count tokens from the provider-returned `usage`.
+
+That path runs in **unary** and **SSE streaming** modes. Auth, rate
+limiting, prompt rewriting, guardrails, and local tokenization are all off
+(see methodology).
 
 ## Fairness rules (do not break these)
 
