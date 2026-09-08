@@ -54,6 +54,7 @@ bench/
   load/         vegeta/fortio request bodies (chat-unary.json, chat-stream.json)
   scripts/      runner + results processing
   reports/      dated, generated report instances (committed)
+  profiling/    dated, one-off profiling investigations (committed)
   results/      raw artifacts (gitignored except .gitkeep)
 ```
 
