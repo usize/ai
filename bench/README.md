@@ -145,8 +145,9 @@ limiting, prompt rewriting, guardrails, and local tokenization are all off
 ## Fairness rules (do not break these)
 
 1. Every engine proxies to a **byte-identical** mock instance.
-2. The harness **consumes SSE incrementally** — it must never buffer a
-   streamed response before forwarding, or streaming numbers are invalid.
+2. **TTFB is measured with a non-buffering reader** (`ttfb-probe.sh`, `curl
+   -N`). vegeta reads whole bodies, so its streaming figure is reported as
+   end-to-end completion — never relabelled as TTFB.
 3. Token counting uses **provider-returned usage only** in v1 (no engine's
    local tokenizer is enabled), so all engines do the same work.
 4. Every result is published with the **per-engine processing ledger** so

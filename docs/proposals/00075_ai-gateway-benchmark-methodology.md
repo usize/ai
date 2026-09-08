@@ -130,9 +130,11 @@ The processing path is exercised in both response modes:
 Streaming is where buffering honesty matters most. A harness that buffers
 a streamed response before releasing it would unfairly penalize whichever
 engine streams incrementally, and would flatter one that already buffers.
-So in streaming mode we measure **time-to-first-byte (TTFB)** and
-inter-chunk latency in addition to end-to-end, and the harness itself must
-consume the stream incrementally (never buffer-then-forward).
+So in streaming mode we measure **time-to-first-byte (TTFB)** with a reader
+that does not buffer (`curl -N`, `time_starttransfer`), in addition to
+end-to-end completion. The two are reported as distinct metrics and never
+conflated: vegeta reads the whole response body, so its streaming figure is
+labelled end-to-end completion, not TTFB.
 
 ## Per-engine processing ledger (fairness contract)
 

@@ -220,8 +220,9 @@ def main():
       "(engines/agentgateway/gateway.yaml) | `llm:` mode, `tokenize: false` "
       "(provider usage only) |")
     P("")
-    P("Fairness rules enforced: byte-identical mock for every engine; the "
-      "harness consumes SSE incrementally; token counting is "
+    P("Fairness rules enforced: byte-identical mock for every engine; TTFB is "
+      "measured with a non-buffering reader while vegeta's streaming number "
+      "is reported as end-to-end completion; token counting is "
       "**provider-usage-only** on all engines (no local tokenizer enabled); "
       "identical CPU/memory caps and load parameters. See the per-engine "
       "processing ledger in the methodology for what each engine does to the "

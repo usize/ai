@@ -1,6 +1,6 @@
 # AI Gateway Benchmark — Results
 
-> **Disclosure: these numbers were captured on a developer laptop running containers inside a podman VM, not a quiet dedicated Linux host. Latency medians and their stddevs are stable enough to compare; the throughput column is not — see "Reading the results".**
+> **Disclosure: these numbers were captured on a developer laptop running containers inside a podman VM, not a quiet dedicated Linux host. Latency medians and their stddevs are stable enough to compare; treat absolute throughput as directional, not as a hardware-grade ceiling.**
 
 Run `v2` — **5 repeats**, each a fresh stack-up / measure / tear-down cycle. Every number below is the median across repeats; `±` is the sample standard deviation.
 
@@ -32,7 +32,7 @@ Each cell runs a checked-in config doing exactly that work:
 | Praxis AI | Praxis AI | [`engines/praxis/gateway.yaml`](engines/praxis/gateway.yaml) | `model_to_header` + `router` + `token_count` (`provider: openai`) |
 | agentgateway | agentgateway | [`engines/agentgateway/gateway.yaml`](engines/agentgateway/gateway.yaml) | `llm:` mode, `tokenize: false` (provider usage only) |
 
-Fairness rules enforced: byte-identical mock for every engine; the harness consumes SSE incrementally; token counting is **provider-usage-only** on all engines (no local tokenizer enabled); identical CPU/memory caps and load parameters. See the per-engine processing ledger in the methodology for what each engine does to the body, row by row.
+Fairness rules enforced: byte-identical mock for every engine; TTFB is measured with a non-buffering reader while vegeta's streaming number is reported as end-to-end completion; token counting is **provider-usage-only** on all engines (no local tokenizer enabled); identical CPU/memory caps and load parameters. See the per-engine processing ledger in the methodology for what each engine does to the body, row by row.
 
 ## Results
 
