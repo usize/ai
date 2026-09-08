@@ -41,7 +41,12 @@ just on hover): `name (P%)`, with the full `(N ms, P%)` in the tooltip.
 ## Files
 
 - [`flame.svg`](flame.svg) — the profile, real call tree, percentages
-  labelled on-frame
+  labelled on-frame. **Open the raw file, not GitHub's inline preview**:
+  GitHub's file-preview page renders `.svg` as a flattened image with no
+  hover or scripting, which is where "clipped" and "not interactive" come
+  from. The raw file is a full SVG document — click a frame to zoom into
+  its subtree, hover any frame (however narrow) for its full untruncated
+  name, use the magnifying-glass icon to search.
 - [`hotspots.txt`](hotspots.txt) — self-time by symbol, extracted from
   the raw `perf report`, ≥0.4% only
 
