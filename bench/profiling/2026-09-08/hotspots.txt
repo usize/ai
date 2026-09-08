@@ -1,139 +1,309 @@
-7.67% [.] core::fmt::write
-5.31% [.] __aarch64_cas4_acq
-3.92% [.] memcpy
-2.93% [.] __aarch64_ldadd4_rel
-2.87% [.] <core::fmt::Formatter>::pad_integral
-2.53% [k] __wake_up_sync_key
-2.21% [.] <u8 as core::fmt::LowerHex>::fmt
-2.17% [k] el0_svc
-2.15% [.] __clock_gettime
-1.91% [k] arch_counter_get_cntvct
-1.90% [.] praxis_ai_filters::token_usage::count::decode_hex
-1.37% [.] <alloc::string::String as core::fmt::Write>::write_str
-1.20% [.] <alloc::string::String as core::fmt::Write>::write_str
-1.12% [k] try_to_wake_up
-1.06% [.] sccp
-1.03% [k] schedule
-0.96% [.] <core::fmt::Formatter>::pad_integral::write_prefix
-0.88% [k] invoke_syscall.constprop.0
-0.88% [k] __pi_memset_generic
-0.76% [.] <nu_ansi_term::style::Style>::write_prefix::<dyn core::fmt::Write>
-0.72% [.] __aarch64_cas8_acq_rel
-0.70% [k] __local_bh_enable_ip
+7.34% [.] core::fmt::write
+4.82% [.] __aarch64_cas4_acq
+3.95% [.] memcpy
+2.84% [.] <core::fmt::Formatter>::pad_integral
+2.72% [k] __wake_up_sync_key
+2.29% [.] <u8 as core::fmt::LowerHex>::fmt
+2.26% [.] __aarch64_ldadd4_rel
+2.03% [.] __clock_gettime
+2.03% [k] el0_svc
+1.85% [.] praxis_ai_filters::token_usage::count::decode_hex
+1.80% [k] arch_counter_get_cntvct
+1.26% [.] <alloc::string::String as core::fmt::Write>::write_str
+1.08% [.] <core::fmt::Formatter>::pad_integral::write_prefix
+1.07% [.] <alloc::string::String as core::fmt::Write>::write_str
+0.97% [.] sccp
+0.89% [k] try_to_wake_up
+0.88% [k] schedule
+0.86% [.] <nu_ansi_term::style::Style>::write_prefix::<dyn core::fmt::Write>
+0.84% [k] __pi_memset_generic
+0.69% [.] _rjem_sdallocx
 0.68% [k] __wake_up
-0.64% [k] handle_softirqs
-0.57% [k] __rcu_read_unlock
-0.56% [.] __aarch64_ldadd8_rel
-0.56% [.] <str as core::fmt::Debug>::fmt
-0.53% [.] _rjem_sdallocx
-0.51% [.] do_rallocx
-0.51% [k] tcp_v4_rcv
-0.51% [k] get_random_u16
-0.37% [k] __arm64_sys_clock_gettime
-0.37% [k] do_epoll_ctl
-0.30% [k] kmem_cache_free
-0.21% [k] __tcp_transmit_skb
-0.20% [k] __memcg_slab_post_alloc_hook
-0.20% [k] kmem_cache_alloc_noprof
-0.19% [k] __memcg_slab_free_hook
-0.18% [k] tcp_ack
-0.17% [k] process_backlog
-0.15% [k] ip_finish_output2
-0.15% [k] el0_svc_common.constprop.0
-0.15% [k] net_rx_action
-0.14% [k] tcp_sendmsg_locked
-0.11% [k] tcp_clean_rtx_queue.constprop.0
-0.10% [k] __dev_queue_xmit
-0.10% [k] __ip_queue_xmit
-0.10% [k] __alloc_skb
-0.10% [k] tcp_rcv_established
-0.10% [k] do_el0_svc
+0.68% [k] invoke_syscall.constprop.0
+0.67% [k] __local_bh_enable_ip
+0.66% [.] __aarch64_cas8_acq_rel
+0.66% [k] handle_softirqs
+0.64% [k] __siphash_unaligned
+0.61% [.] <tracing_subscriber::registry::sharded::Registry>::get
+0.58% [k] get_random_u16
+0.55% [.] __aarch64_ldadd8_rel
+0.50% [k] tcp_in_window
+0.50% [.] do_rallocx
+0.48% [.] <pingora_proxy::HttpProxy<praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler>>::proxy_1to1::{closure#0}::{closure#2}
+0.47% [k] fdget
+0.44% [k] __arch_copy_to_user
+0.44% [.] <str as core::fmt::Debug>::fmt
+0.44% [k] __slab_free
+0.43% [.] _rjem_malloc
+0.43% [k] kmem_cache_free
+0.42% [k] __rcu_read_unlock
+0.39% [.] _rjem_je_arena_ralloc
+0.35% [.] <tracing_subscriber::fmt::format::DefaultVisitor as tracing_core::field::Visit>::record_debug
+0.34% [.] <pingora_proxy::HttpProxy<praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler> as pingora_core::apps::HttpServerApp>::process_new_http::{closure#0}
+0.31% [.] <alloc::string::String as core::fmt::Write>::write_char
+0.31% [k] do_epoll_ctl
+0.30% [.] tokio::runtime::scheduler::multi_thread::worker::run
+0.29% [.] <pingora_proxy::HttpProxy<praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler>>::proxy_to_upstream::{closure#0}
+0.29% [.] epoll_ctl
+0.29% [k] nf_conntrack_tcp_packet
+0.28% [k] tcp_v4_rcv
+0.28% [.] <tracing_subscriber::registry::sharded::CloseGuard as core::ops::drop::Drop>::drop
+0.26% [k] __arm64_sys_clock_gettime
+0.25% [.] <pingora_core::protocols::http::v1::server::HttpSession>::read_request::{closure#0}
+0.24% [k] nf_nat_inet_fn
+0.21% [k] ep_insert
+0.20% [k] __tcp_transmit_skb
+0.19% [.] <alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>
+0.19% [.] <pingora_core::protocols::http::v1::client::HttpSession>::read_resp_header_parts::{closure#0}
+0.19% [k] tcp_ack
+0.18% [.] <nu_ansi_term::display::AnsiGenericString<str> as core::fmt::Display>::fmt
+0.18% [k] __memcg_slab_post_alloc_hook
+0.18% [k] skb_release_data
+0.18% [.] <tracing_subscriber::registry::sharded::Registry as tracing_core::subscriber::Subscriber>::current_span
+0.16% [.] <praxis_ai_filters::token_usage::count::TokenCountFilter as praxis_filter::filter::HttpFilter>::on_response_body
+0.16% [.] praxis_protocol::http::pingora::handler::request_filter::run_pipeline::{closure#0}
+0.16% [k] net_rx_action
+0.16% [.] <nu_ansi_term::ansi::Suffix as core::fmt::Display>::fmt
+0.16% [.] <tracing_subscriber::layer::layered::Layered<tracing_subscriber::fmt::fmt_layer::Layer<tracing_subscriber::layer::layered::Layered<tracing_subscriber::reload::Layer<tracing_subscriber::filter::env::EnvFilter, tracing_subscriber::registry::sharded::Registry>, tracing_subscriber::registry::sharded::Registry>, tracing_subscriber::fmt::format::DefaultFields, tracing_subscriber::fmt::format::Format, tracing_subscriber::fmt::writer::BoxMakeWriter>, tracing_subscriber::layer::layered::Layered<tracing_subscriber::reload::Layer<tracing_subscriber::filter::env::EnvFilter, tracing_subscriber::registry::sharded::Registry>, tracing_subscriber::registry::sharded::Registry>> as tracing_core::subscriber::Subscriber>::try_close
+0.16% [k] nf_hook_slow
+0.16% [.] praxis_filter::pipeline::http_utils::record_filter_result
+0.15% [k] kmem_cache_alloc_noprof
+0.15% [.] setsockopt
+0.15% [.] <tracing_subscriber::registry::sharded::Registry as tracing_core::subscriber::Subscriber>::new_span
+0.14% [k] __memcg_slab_free_hook
+0.14% [k] nf_conntrack_in
+0.14% [.] praxis_protocol::http::pingora::handler::request_filter::execute::{closure#0}
+0.14% [.] <alloc::raw_vec::RawVecInner>::finish_grow
+0.14% [.] <praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler as pingora_proxy::proxy_trait::ProxyHttp>::response_filter::{closure#0}
+0.14% [.] _rjem_je_te_event_trigger
+0.13% [.] <pingora_proxy::HttpProxy<praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler>>::process_request::{closure#0}
+0.13% [k] el0_svc_common.constprop.0
+0.13% [.] pingora_core::connectors::do_connect_inner::<pingora_core::upstreams::peer::HttpPeer>::{closure#0}
+0.13% [k] __dev_queue_xmit
+0.12% [.] <praxis_filter::pipeline::FilterPipeline>::execute_http_response::{closure#0}
+0.12% [.] <tracing_subscriber::registry::sharded::Registry as tracing_core::subscriber::Subscriber>::clone_span
+0.12% [.] getsockopt
+0.12% [k] process_backlog
+0.12% [k] __ip_queue_xmit
+0.12% [k] ip_finish_output2
+0.12% [k] tcp_sendmsg_locked
+0.11% [.] <pingora_core::protocols::l4::stream::Stream as tokio::io::async_read::AsyncRead>::poll_read
+0.11% [.] <pingora_core::connectors::http::Connector>::release_http_session::<pingora_core::upstreams::peer::HttpPeer>::{closure#0}
+0.11% [.] <tracing::span::Span>::current
+0.11% [.] <tracing_core::span::Attributes>::record
+0.11% [k] do_el0_svc
+0.11% [k] __alloc_skb
+0.11% [k] resolve_normal_ct
+0.11% [.] shutdown
+0.10% [.] <praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler as pingora_proxy::proxy_trait::ProxyHttp>::upstream_request_filter::{closure#0}
+0.10% [k] inet_create.part.0.constprop.0
+0.10% [k] tcp_clean_rtx_queue.constprop.0
+0.10% [.] pingora_core::protocols::l4::ext::inner_connect_with::<pingora_core::connectors::l4::connect<pingora_core::upstreams::peer::HttpPeer>::{closure#0}::{closure#2}>::{closure#0}
+0.10% [.] socket
+0.10% [k] tcp_stream_alloc_skb
+0.09% [.] <praxis_filter::pipeline::FilterPipeline>::execute_http_request_body::{closure#0}
+0.09% [.] <tokio::runtime::io::driver::Driver>::turn
+0.09% [.] <tracing_subscriber::layer::layered::Layered<tracing_subscriber::fmt::fmt_layer::Layer<tracing_subscriber::layer::layered::Layered<tracing_subscriber::reload::Layer<tracing_subscriber::filter::env::EnvFilter, tracing_subscriber::registry::sharded::Registry>, tracing_subscriber::registry::sharded::Registry>, tracing_subscriber::fmt::format::DefaultFields, tracing_subscriber::fmt::format::Format, tracing_subscriber::fmt::writer::BoxMakeWriter>, tracing_subscriber::layer::layered::Layered<tracing_subscriber::reload::Layer<tracing_subscriber::filter::env::EnvFilter, tracing_subscriber::registry::sharded::Registry>, tracing_subscriber::registry::sharded::Registry>> as tracing_core::subscriber::Subscriber>::record
+0.09% [.] <pingora_proxy::HttpProxy<praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler> as pingora_core::apps::ServerApp>::process_new::{closure#0}
+0.09% [.] <praxis_filter::builtins::http::payload_processing::json_body_field::JsonBodyFieldFilter as praxis_filter::filter::HttpFilter>::on_request_body::{closure#0}
+0.09% [.] <tracing_subscriber::layer::layered::Layered<tracing_subscriber::reload::Layer<tracing_subscriber::filter::env::EnvFilter, tracing_subscriber::registry::sharded::Registry>, tracing_subscriber::registry::sharded::Registry> as tracing_core::subscriber::Subscriber>::enter
+0.09% [.] <tracing_subscriber::layer::layered::Layered<tracing_subscriber::reload::Layer<tracing_subscriber::filter::env::EnvFilter, tracing_subscriber::registry::sharded::Registry>, tracing_subscriber::registry::sharded::Registry> as tracing_core::subscriber::Subscriber>::try_close
+0.08% [.] <pingora_proxy::HttpProxy<praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler>>::process_upstream_tasks::{closure#0}
 0.08% [k] tcp_v4_do_rcv
-0.07% [k] ip_output
-0.06% [k] __netif_receive_skb_one_core
-0.06% [k] __ip_finish_output
-0.06% [k] neigh_hh_output
-0.05% [k] ip_finish_output
-0.05% [k] ip_rcv
-0.05% [k] tcp_rcv_state_process
-0.05% [k] tcp_write_xmit
-0.05% [k] __tcp_push_pending_frames
-0.05% [k] ip_local_deliver
-0.05% [k] tcp_data_queue
-0.05% [k] tcp_stream_alloc_skb
-0.05% [k] do_notify_resume
-0.05% [k] do_softirq
+0.08% [.] <tokio::runtime::scheduler::multi_thread::worker::Context>::run_task
+0.08% [.] <tracing_subscriber::layer::layered::Layered<tracing_subscriber::reload::Layer<tracing_subscriber::filter::env::EnvFilter, tracing_subscriber::registry::sharded::Registry>, tracing_subscriber::registry::sharded::Registry> as tracing_core::subscriber::Subscriber>::exit
+0.08% [k] ipv4_conntrack_local
+0.08% [k] tcp_rcv_established
+0.07% [.] <praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler as pingora_proxy::proxy_trait::ProxyHttp>::logging::{closure#0}
+0.07% [.] <tracing::span::Span>::record_all
+0.07% [k] __inet_hash_connect
+0.07% [k] __ip_local_out
+0.07% [.] pingora_core::connectors::do_connect::<pingora_core::upstreams::peer::HttpPeer>::{closure#0}
+0.07% [.] <pingora_core::services::listening::Service<pingora_proxy::HttpProxy<praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler>>>::run_endpoint::{closure#0}::{closure#0}
+0.07% [.] <tracing_subscriber::layer::layered::Layered<tracing_subscriber::fmt::fmt_layer::Layer<tracing_subscriber::layer::layered::Layered<tracing_subscriber::reload::Layer<tracing_subscriber::filter::env::EnvFilter, tracing_subscriber::registry::sharded::Registry>, tracing_subscriber::registry::sharded::Registry>, tracing_subscriber::fmt::format::DefaultFields, tracing_subscriber::fmt::format::Format, tracing_subscriber::fmt::writer::BoxMakeWriter>, tracing_subscriber::layer::layered::Layered<tracing_subscriber::reload::Layer<tracing_subscriber::filter::env::EnvFilter, tracing_subscriber::registry::sharded::Registry>, tracing_subscriber::registry::sharded::Registry>> as tracing_core::subscriber::Subscriber>::new_span
+0.07% [k] neigh_hh_output
+0.06% [.] <pingora_proxy::HttpProxy<praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler>>::handle_new_request::{closure#0}
+0.06% [.] <tokio::net::tcp::stream::TcpStream>::poll_read_priv
+0.06% [k] ip_finish_output
+0.06% [k] __tcp_send_ack.part.0
+0.06% [k] tcp_recvmsg_locked
+0.06% [.] <pingora_proxy::Session>::write_response_tasks::{closure#0}
+0.06% [.] syscall
+0.05% [.] <pingora_core::protocols::http::v1::server::HttpSession>::read_body_bytes::{closure#0}
+0.05% [.] <praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler as pingora_proxy::proxy_trait::ProxyHttp>::response_body_filter
+0.05% [.] <tracing_core::span::Record>::record
+0.05% [.] _rjem_je_sdallocx_default
+0.05% [k] ip_output
+0.05% [.] praxis_protocol::http::pingora::handler::request_filter::create_request_span
+0.05% [.] <alloc::raw_vec::RawVecInner>::finish_grow
+0.05% [.] <pingora_core::protocols::http::server::Session>::read_request::{closure#0}
+0.05% [.] <praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler as pingora_proxy::proxy_trait::ProxyHttp>::upstream_peer::{closure#0}
+0.05% [k] ip_queue_xmit
+0.05% [k] tcp_v4_connect
+0.05% [k] xmit_one.constprop.0
+0.05% [.] <bytes::bytes_mut::BytesMut as core::ops::drop::Drop>::drop
+0.05% [.] <tracing_subscriber::layer::layered::Layered<tracing_subscriber::fmt::fmt_layer::Layer<tracing_subscriber::layer::layered::Layered<tracing_subscriber::reload::Layer<tracing_subscriber::filter::env::EnvFilter, tracing_subscriber::registry::sharded::Registry>, tracing_subscriber::registry::sharded::Registry>, tracing_subscriber::fmt::format::DefaultFields, tracing_subscriber::fmt::format::Format, tracing_subscriber::fmt::writer::BoxMakeWriter>, tracing_subscriber::layer::layered::Layered<tracing_subscriber::reload::Layer<tracing_subscriber::filter::env::EnvFilter, tracing_subscriber::registry::sharded::Registry>, tracing_subscriber::registry::sharded::Registry>> as tracing_core::subscriber::Subscriber>::enter
+0.05% [k] __netif_receive_skb_one_core
+0.05% [k] inet_sendmsg
 0.05% [k] ip_protocol_deliver_rcu
 0.05% [k] ip_rcv_finish
 0.05% [k] ktime_get
-0.05% [k] wake_up_q
-0.04% [k] tcp_recvmsg_locked
-0.04% [k] inet_sendmsg
-0.04% [k] ip_local_deliver_finish
-0.04% [k] ip_queue_xmit
-0.04% [k] tcp_v4_connect
-0.03% [k] __arm64_sys_sendto
-0.03% [k] tcp_push
-0.03% [k] __sys_sendto
-0.03% [k] inet_recvmsg
-0.03% [k] tcp_conn_request
-0.03% [k] tcp_send_fin
-0.03% [k] tcp_time_wait
-0.03% [k] __napi_poll
+0.04% [.] <pingora_core::connectors::TransportConnector>::new_stream::<pingora_core::upstreams::peer::HttpPeer>::{closure#0}
+0.04% [.] <pingora_proxy::HttpProxy<praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler>>::send_body_to_pipe::{closure#0}
+0.04% [.] <tokio::net::tcp::stream::TcpStream>::poll_write_priv
+0.04% [k] __tcp_push_pending_frames
+0.04% [.] praxis_protocol::http::pingora::handler::request_filter::apply_pre_read_mutations
+0.04% [k] security_compute_sid
+0.04% [k] tcp_check_req
+0.04% [.] <pingora_core::connectors::http::Connector>::get_http_session::<pingora_core::upstreams::peer::HttpPeer>::{closure#0}
+0.04% [.] <praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler as pingora_proxy::proxy_trait::ProxyHttp>::connected_to_upstream::{closure#0}
+0.04% [.] <tokio::runtime::scheduler::multi_thread::worker::Context>::park_internal
+0.04% [.] <tracing_subscriber::fmt::format::DefaultVisitor as tracing_core::field::Visit>::record_str
+0.04% [k] __ip_finish_output
+0.04% [k] ip_local_deliver
+0.04% [.] <pingora_core::protocols::http::server::Session>::finish::{closure#0}
+0.04% [.] <pingora_proxy::HttpProxy<praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler>>::h1_response_filter::{closure#0}
+0.04% [k] __napi_poll
+0.04% [k] do_notify_resume
+0.04% [k] tcp_push
+0.04% [k] tcp_send_fin
+0.04% [k] tcp_set_state
+0.04% [k] wake_up_q
+0.03% [.] <tokio::io::util::buf_writer::BufWriter<pingora_core::protocols::l4::stream::RawStreamWrapper>>::flush_buf
+0.03% [.] <tracing::span::Span>::make_with
+0.03% [.] <tracing_subscriber::layer::layered::Layered<tracing_subscriber::fmt::fmt_layer::Layer<tracing_subscriber::layer::layered::Layered<tracing_subscriber::reload::Layer<tracing_subscriber::filter::env::EnvFilter, tracing_subscriber::registry::sharded::Registry>, tracing_subscriber::registry::sharded::Registry>, tracing_subscriber::fmt::format::DefaultFields, tracing_subscriber::fmt::format::Format, tracing_subscriber::fmt::writer::BoxMakeWriter>, tracing_subscriber::layer::layered::Layered<tracing_subscriber::reload::Layer<tracing_subscriber::filter::env::EnvFilter, tracing_subscriber::registry::sharded::Registry>, tracing_subscriber::registry::sharded::Registry>> as tracing_core::subscriber::Subscriber>::exit
+0.03% [k] do_softirq
+0.03% [k] ip_local_deliver_finish
+0.03% [k] tcp_v6_syn_recv_sock
+0.03% [k] tcp_write_xmit
+0.03% [.] <&std::os::unix::net::stream::UnixStream as std::io::Write>::write
+0.03% [.] <alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>
+0.03% [.] <mio::poll::Poll>::poll
+0.03% [k] __netif_receive_skb
 0.03% [k] __sock_sendmsg
-0.03% [k] tcp_check_req
-0.03% [k] __release_sock
-0.03% [k] __sys_recvfrom
-0.03% [k] tcp_sendmsg
-0.02% [k] __netif_receive_skb
-0.02% [k] release_sock
-0.02% [k] tcp_v6_syn_recv_sock
-0.02% [k] __tcp_ack_snd_check
-0.02% [k] __tcp_send_ack.part.0
-0.02% [k] skb_copy_datagram_iter
-0.02% [k] inet_shutdown
+0.03% [k] tcp_rcv_state_process
+0.03% [.] tokio::runtime::task::raw::poll::<<pingora_core::services::listening::Service<pingora_proxy::HttpProxy<praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler>>>::run_endpoint::{closure#0}::{closure#0}, alloc::sync::Arc<tokio::runtime::scheduler::multi_thread::handle::Handle>>
+0.03% [.] <pingora_core::protocols::http::v1::client::HttpSession>::write_body::{closure#0}
+0.03% [.] <pingora_core::protocols::l4::stream::Stream as tokio::io::async_write::AsyncWrite>::poll_write
+0.03% [.] <praxis_ai_filters::token_usage::count::ProviderKind>::extract_token_usage
+0.03% [.] <tokio::io::util::read_buf::ReadBuf<alloc::boxed::Box<dyn pingora_core::protocols::IO>, bytes::bytes_mut::BytesMut> as core::future::future::Future>::poll
+0.03% [.] core::ptr::drop_glue::<tokio::net::tcp::stream::TcpStream>
+0.03% [.] core::ptr::drop_glue::<tracing::instrument::Instrumented<praxis_filter::pipeline::http_utils::run_request_filter::{closure#0}::{closure#0}>>
+0.03% [.] nstime_update_impl
+0.02% [.] <pingora_core::protocols::http::v1::server::HttpSession>::write_body_buf::{closure#0}
+0.02% [.] <tracing_subscriber::layer::layered::Layered<tracing_subscriber::reload::Layer<tracing_subscriber::filter::env::EnvFilter, tracing_subscriber::registry::sharded::Registry>, tracing_subscriber::registry::sharded::Registry> as tracing_core::subscriber::Subscriber>::new_span
+0.02% [k] __arm64_sys_sendto
+0.02% [.] _rjem_je_arena_dalloc_small
+0.02% [k] ip_rcv
+0.02% [k] selinux_socket_create
 0.02% [k] tcp_connect
+0.02% [k] tcp_data_queue
+0.02% [k] tcp_time_wait
+0.02% [.] <pingora_proxy::HttpProxy<praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler>>::finish::{closure#0}
+0.02% [.] <praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler as pingora_proxy::proxy_trait::ProxyHttp>::request_body_filter::{closure#0}
+0.02% [.] _rjem_je_malloc_default
+0.02% [.] core::ptr::drop_glue::<praxis_protocol::http::pingora::context::PingoraRequestCtx>
+0.02% [k] dev_hard_start_xmit
+0.02% [k] inet_shutdown
+0.02% [.] praxis_protocol::http::pingora::handler::connected_to_upstream::execute
+0.02% [k] tcp_create_openreq_child
+0.02% [.] <&mio::net::tcp::stream::TcpStream as std::io::Read>::read
+0.02% [.] <&std::os::unix::net::stream::UnixStream as std::io::Read>::read
+0.02% [.] <pingora_core::protocols::http::server::Session>::read_request_body::{closure#0}
+0.02% [.] <pingora_core::protocols::http::v1::body::BodyWriter>::write_body::<alloc::boxed::Box<dyn pingora_core::protocols::IO>>::{closure#0}
+0.02% [.] <praxis_protocol::http::pingora::handler::with_body::PingoraHttpHandler as pingora_proxy::proxy_trait::ProxyHttp>::request_filter::{closure#0}
+0.02% [.] <tokio::runtime::scheduler::multi_thread::stats::Stats>::end_processing_scheduled_tasks
+0.02% [k] __arm64_sys_socket
+0.02% [k] __sys_sendto
+0.02% [k] release_sock
+0.02% [k] security_socket_create
+0.02% [k] tcp_v4_syn_recv_sock
+0.02% [.] <pingora_core::protocols::http::v1::body::BodyReader>::init_content_length
+0.02% [.] <pingora_core::protocols::http::v1::body::BodyReader>::prepare_buf
+0.02% [.] <praxis_filter::pipeline::FilterPipeline>::execute_http_response_body_with_response_header
+0.02% [.] <tokio::io::poll_evented::PollEvented<mio::net::tcp::stream::TcpStream>>::new_with_interest_and_handle
+0.02% [.] <tokio::net::tcp::stream::TcpStream>::connect_mio::{closure#0}
+0.02% [.] <tokio::net::tcp::stream::TcpStream>::new
+0.02% [.] <tracing::span::Span>::new
+0.02% [k] __inet_stream_connect
+0.02% [k] __release_sock
+0.02% [k] __sock_create
+0.02% [.] _rjem_je_extent_record
+0.02% [k] inet_recvmsg
+0.02% [k] tcp_conn_request
 0.02% [k] tcp_data_ready
 0.02% [k] tcp_shutdown
-0.02% [k] tcp_v4_syn_recv_sock
+0.01% [.] <pingora_core::protocols::http::v1::server::HttpSession>::do_write_body_buf::{closure#0}
+0.01% [.] <pingora_core::protocols::http::v1::server::HttpSession>::prepare_response_header
+0.01% [.] <pingora_core::protocols::http::v1::server::HttpSession>::write_response_header::{closure#0}
+0.01% [.] <pingora_http::RequestHeader as core::clone::Clone>::clone
+0.01% [k] __arm64_sys_epoll_pwait
 0.01% [k] __arm64_sys_recvfrom
-0.01% [k] __arm64_sys_socket
-0.01% [k] __sock_create
-0.01% [k] inet_release
 0.01% [k] __skb_datagram_iter
-0.01% [k] __sock_release
-0.01% [k] __sys_connect_file
-0.01% [k] __sys_socket
-0.01% [k] inet_stream_connect
-0.01% [k] tcp_mstamp_refresh
-0.01% [k] tcp_send_ack
-0.01% [k] __arm64_sys_connect
-0.01% [k] __inet_stream_connect
-0.01% [k] do_futex
+0.01% [k] __sys_connect
 0.01% [k] futex_wake
+0.01% [k] security_transition_sid
+0.01% [k] skb_copy_datagram_iter
+0.01% [k] tcp_mstamp_refresh
+0.01% [k] tcp_sendmsg
+0.01% [k] tcp_v4_conn_request
+0.01% [k] tcp_v6_conn_request
+0.01% [.] <&mio::net::tcp::stream::TcpStream as std::io::Write>::write
+0.01% [.] <mio::net::uds::datagram::UnixDatagram as mio::event::source::Source>::deregister
+0.01% [.] <praxis_ai_filters::inference::model_to_header::ModelToHeaderFilter as praxis_filter::filter::HttpFilter>::on_request_body::{closure#0}
+0.01% [.] <socket2::socket::Socket>::connect
+0.01% [.] <socket2::socket::Socket>::new
+0.01% [.] <tokio::net::tcp::socket::TcpSocket>::new_v4
+0.01% [k] __fput
+0.01% [k] __nf_ct_delete_from_lists
+0.01% [k] __sock_release
+0.01% [k] __sys_recvfrom
+0.01% [k] __sys_shutdown
+0.01% [k] __tcp_ack_snd_check
+0.01% [.] core::ptr::drop_glue::<pingora_core::protocols::l4::stream::Stream>
+0.01% [k] inet_stream_connect
+0.01% [.] pingora_core::protocols::l4::ext::connect_with::<pingora_core::connectors::l4::connect<pingora_core::upstreams::peer::HttpPeer>::{closure#0}::{closure#2}>::{closure#0}
+0.01% [.] pingora_timeout::fast_timeout::check_clock_thread
+0.01% [.] tcache_gc_event
 0.01% [k] tcp_rcv_synsent_state_process
 0.01% [k] tcp_recvmsg
+0.01% [.] <mio::net::uds::datagram::UnixDatagram as mio::event::source::Source>::register
+0.01% [.] <std::os::unix::net::datagram::UnixDatagram>::shutdown
+0.01% [.] <tokio::net::tcp::stream::TcpStream>::shutdown_std
+0.01% [.] <tokio::runtime::time::Driver>::park_internal
 0.01% [k] __arm64_sys_close
-0.01% [k] __arm64_sys_shutdown
-0.01% [k] __sys_shutdown
-0.01% [k] fput_close_sync
+0.01% [k] __arm64_sys_futex
+0.01% [k] __sys_connect_file
+0.01% [k] __sys_socket
+0.01% [k] nf_ct_delete
+0.01% [k] simple_copy_to_iter
+0.01% [k] sock_def_wakeup
 0.01% [k] sock_recvmsg
-0.01% [k] tcp_close
-0.01% [k] tcp_v6_conn_request
-0.00% [k] __arm64_sys_epoll_ctl
-0.00% [k] __arm64_sys_epoll_pwait
-0.00% [k] __arm64_sys_futex
-0.00% [k] __fput
-0.00% [k] security_transition_sid
+0.01% [k] tcp_fin
+0.01% [k] tcp_send_ack
+0.00% [.] <std::sys::pal::unix::time::Timespec>::now
+0.00% [.] <std::time::Instant>::elapsed
+0.00% [.] <tokio::net::tcp::stream::TcpStream as tokio::io::async_write::AsyncWrite>::poll_shutdown
+0.00% [k] __arm64_sys_shutdown
+0.00% [.] core::ptr::drop_glue::<tokio::io::util::buf_writer::BufWriter<pingora_core::protocols::l4::stream::RawStreamWrapper>>
+0.00% [k] do_futex
+0.00% [k] fput_close_sync
+0.00% [k] inet_create
+0.00% [k] inet_release
+0.00% [.] pac_dalloc_impl
 0.00% [k] sock_close
-0.00% [k] sock_def_wakeup
-0.00% [k] tcp_done
-0.00% [k] tcp_v4_conn_request
+0.00% [k] tcp_close
+0.00% [.] <std::sys::thread::unix::Thread>::new
+0.00% [.] <std::sys::thread::unix::Thread>::new::thread_start
+0.00% [.] <std::thread::lifecycle::spawn_unchecked<<tokio::runtime::blocking::pool::Spawner>::spawn_thread::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+0.00% [.] <tracing_subscriber::fmt::format::DefaultVisitor as tracing_core::field::Visit>::record_u64
 0.00% [k] ____do_softirq
+0.00% [k] __arm64_sys_connect
+0.00% [k] __arm64_sys_epoll_ctl
+0.00% [.] __clone
 0.00% [k] __do_softirq
 0.00% [k] __el0_irq_handler_common
 0.00% [k] __irq_exit_rcu
-0.00% [k] __sys_connect
 0.00% [k] call_on_irq_stack
 0.00% [k] do_softirq_own_stack
 0.00% [k] el0_interrupt
@@ -141,5 +311,11 @@
 0.00% [k] el0t_64_irq_handler
 0.00% [k] el0t_64_sync
 0.00% [k] el0t_64_sync_handler
+0.00% [k] inet_hash_connect
 0.00% [k] irq_exit_rcu
-0.00% [k] tcp_fin
+0.00% [.] start
+0.00% [.] std::sys::backtrace::__rust_begin_short_backtrace::<<tokio::runtime::blocking::pool::Spawner>::spawn_thread::{closure#0}, ()>
+0.00% [k] tcp_child_process
+0.00% [k] tcp_done
+0.00% [.] tokio::runtime::task::raw::poll::<tokio::runtime::blocking::task::BlockingTask<<tokio::runtime::scheduler::multi_thread::worker::Launch>::launch::{closure#0}>, tokio::runtime::blocking::schedule::BlockingSchedule>
+0.00% [.] 0x0000ffffacd9d9c0
