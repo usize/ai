@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the AI-gateway benchmark REPORT.md from a multi-repeat run.
+"""Generate a dated AI-gateway benchmark report from a multi-repeat run.
 
 Reads a run directory containing rep-<n>/ sub-directories (as produced by
 run-repeats.sh) and emits a complete, self-contained Markdown report:
@@ -16,7 +16,10 @@ Usage:
   bench/scripts/report.py <run-dir> [--host "<free-text host profile>"] \
       [--title "<title>"] [--caveat "<disclosure line>"]
 
-Prints the report to stdout; redirect to bench/REPORT.md to publish.
+Prints the report to stdout. This is a snapshot of ONE benchmarking
+instance, not a living document — redirect to a dated file under
+bench/reports/, e.g. bench/reports/2026-09-08.md. Never overwrite an
+existing dated report with a later run.
 """
 import argparse
 import pathlib
@@ -167,13 +170,18 @@ def main():
 
     P = print
 
+    captured_at = meta.get("captured_at", "(not recorded — pre-dates captured_at in meta.yaml)")
+
     P(f"# {args.title}\n")
     if args.caveat:
         P(f"> **{args.caveat}**\n")
     P(
-        f"Run `{run_dir.name}` — **{len(rep_dirs)} repeats**, each a fresh "
-        "stack-up / measure / tear-down cycle. Every number below is the "
-        "median across repeats; `±` is the sample standard deviation.\n"
+        f"**Captured:** {captured_at} — run `{run_dir.name}`, "
+        f"**{len(rep_dirs)} repeats**, each a fresh stack-up / measure / "
+        "tear-down cycle. Every number below is the median across repeats; "
+        "`±` is the sample standard deviation. This is a snapshot of one "
+        "benchmarking instance, not a living result — see "
+        "[`bench/README.md`](../README.md) for the stable methodology.\n"
     )
 
     # ---- Methodology summary -------------------------------------------------
@@ -188,7 +196,7 @@ def main():
     )
     P("Full methodology and the fairness contract:\n")
     P("- [`docs/proposals/00075_ai-gateway-benchmark-methodology.md`]"
-      "(../docs/proposals/00075_ai-gateway-benchmark-methodology.md)\n")
+      "(../../docs/proposals/00075_ai-gateway-benchmark-methodology.md)\n")
 
     P("### The measured processing path\n")
     P(
@@ -211,13 +219,13 @@ def main():
     P("| Cell | Engine | Config | Key knobs |")
     P("|---|---|---|---|")
     P("| baseline | mock only | [`engines/baseline/compose.yaml`]"
-      "(engines/baseline/compose.yaml) | mock published direct to host, no "
+      "(../engines/baseline/compose.yaml) | mock published direct to host, no "
       "gateway in path |")
     P("| Praxis AI | Praxis AI | [`engines/praxis/gateway.yaml`]"
-      "(engines/praxis/gateway.yaml) | `model_to_header` + `router` + "
+      "(../engines/praxis/gateway.yaml) | `model_to_header` + `router` + "
       "`token_count` (`provider: openai`) |")
     P("| agentgateway | agentgateway | [`engines/agentgateway/gateway.yaml`]"
-      "(engines/agentgateway/gateway.yaml) | `llm:` mode, `tokenize: false` "
+      "(../engines/agentgateway/gateway.yaml) | `llm:` mode, `tokenize: false` "
       "(provider usage only) |")
     P("")
     P("Fairness rules enforced: byte-identical mock for every engine; TTFB is "

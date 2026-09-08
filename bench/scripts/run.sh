@@ -72,6 +72,7 @@ done
 
 record_meta() {
   {
+    echo "captured_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
     echo "engine: ${ENGINE}"
     echo "rate: ${RATE}"
     echo "duration: ${DURATION}"
